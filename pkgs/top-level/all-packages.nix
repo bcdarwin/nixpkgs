@@ -6712,7 +6712,7 @@ let
   irrlicht3843 = callPackage ../development/libraries/irrlicht/irrlicht3843.nix { };
 
   isocodes = callPackage ../development/libraries/iso-codes { };
-
+  
   itk = callPackage ../development/libraries/itk { };
 
   jasper = callPackage ../development/libraries/jasper { };
@@ -14532,6 +14532,8 @@ let
   archimedes = callPackage ../applications/science/electronics/archimedes { };
 
   emboss = callPackage ../applications/science/biology/emboss { };
+
+  minc_toolkit = callPackage ../applications/science/biology/minc-toolkit { };
 
   mrbayes = callPackage ../applications/science/biology/mrbayes { };
 
