@@ -1,0 +1,15 @@
+--- ./CMakeLists.txt	2015-12-23 12:36:46.374345634 -0500
++++ ./CMakeLists.txt	2015-12-23 12:46:11.072400766 -0500
+@@ -246,12 +246,6 @@
+   SET(MINC2_deps ${MINC2_deps} HDF5)
+ ENDIF(NOT USE_SYSTEM_HDF5)
+ 
+-ADD_DEPENDENCIES(minc2 ${MINC2_deps})
+-
+-IF(MT_BUILD_SHARED_LIBS)
+-  ADD_DEPENDENCIES(minc2_static  ${MINC2_deps})
+-ENDIF(MT_BUILD_SHARED_LIBS)
+-
+ # Setup main minc variables
+ SET(LIBMINC_USE_FILE ${CMAKE_BINARY_DIR}/libminc/UseLIBMINC.cmake CACHE INTERNAL "LIBMINC use file")
+ INCLUDE(${CMAKE_BINARY_DIR}/libminc/LIBMINCConfig.cmake)

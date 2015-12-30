@@ -1,23 +1,26 @@
-{ stdenv, fetchgit, cmake, flex, bison, which,
-  fftwFloat, freeglut, gsl, hdf5, mesa, netcdf,
+{ stdenv, fetchgit, cmake, pkgconfig, flex, bison, which,
+  fftwFloat, freeglut, gsl, hdf5, itk, mesa, netcdf,
   pcre, perl, octave, libXext, libXi, libXmu, zlib }:
 
 stdenv.mkDerivation rec {
   _name    = "minc-toolkit";
-  _version = "1.0.07";
+  _version = "1.9.10";
   name = "${_name}-${_version}";
 
   # fetchFromGitHub doesn't seem to check out submodules properly ...
   src = fetchgit {
-    url = "https://github.com/BIC-MNI/${_name}.git";
-    rev = "9dbb6ed";
-    sha256 = "0z9z0fa1g273r3yxi1nfyv0gri9fch79nbnlynyr27v9ckmj3v3y";
+    url = "https://github.com/BIC-MNI/${_name}-v2.git";
+    rev = "8e57f87a33fa0";
+    sha256 = "00196hgf99p8c01rj6dwp607mz0gyffqsi47rgd3iizsj2vn1gj1";
   };
   
-  nativeBuildInputs = [ cmake flex bison which ];
-  buildInputs = [ perl fftwFloat freeglut gsl hdf5 mesa netcdf octave pcre libXext libXmu libXi zlib ];
+  nativeBuildInputs = [ cmake pkgconfig flex bison which ];
+  buildInputs = [ perl fftwFloat freeglut gsl hdf5 itk mesa netcdf octave pcre libXext libXmu libXi zlib ];
 
-  patches = [ ./include-external-project.patch ];
+  #patches = [ ./include-external-project.patch ];  # not needed while USE_SYSTEM_ITK is OFF (see below)
+  #patches = [ ./include-external-project.patch ./no-skip-rpath.patch ];
+  # FIXME remove these commented lines
+  patches = [ ./no-add-dependencies.patch ];
 
   configurePhase = ''
     mkdir build/
@@ -25,32 +28,29 @@ stdenv.mkDerivation rec {
     cmake -DCMAKE_INSTALL_PREFIX=$out $cmakeFlags ../
   '';
 
-  dontSetPrefix = true;
+  checkPhase = "ctest";
+  doCheck = true;
 
   cmakeFlags = [
-    #"-DCMAKE_INSTALL_PREFIX=$out"
-
     "-DMT_BUILD_SHARED_LIBS=ON"
 
     "-DUSE_SYSTEM_FFTW3F=ON"
     "-DUSE_SYSTEM_GSL=ON"
     "-DUSE_SYSTEM_HDF5=ON"
-    #"-DUSE_SYSTEM_ITK=ON"    # doesn't work due to bug #36
+    "-DUSE_SYSTEM_ITK=ON" "-DITK_DIR=${itk}/lib/cmake"   # doesn't work due to minc-toolkit bug #36
     "-DUSE_SYSTEM_NETCDF=ON"
     "-DUSE_SYSTEM_PCRE=ON"
     "-DUSE_SYSTEM_ZLIB=ON"
 
     #"-DMT_BUILD_VISUAL_TOOLS=ON"
     #"-DMT_BUILD_ITK_TOOLS=ON"
-    #"-DMT_BUILD_MINC_ANTS=ON"
+    #"-DMT_BUILD_ANTS=ON"
     #"-DMT_BUILD_C3D=ON"
   ];
 
-  checkPhase = "ctest";  # note that tests won't succeed due to failure of nonlinear minctracc test
-
   meta = {
-    description = "Metaproject bundling most MINC libraries and tools";
+    description = "Metaproject bundling most MINC libraries and tools, 'version 2'";
     license     = "GPL3";
-    homepage    = "https://github.com/BIC-MNI/${_name}";
+    homepage    = "https://github.com/BIC-MNI/${_name}-v2";
   };
 }
