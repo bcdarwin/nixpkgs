@@ -1,0 +1,12 @@
+--- ./CMakeLists.txt	2015-12-11 12:10:53.181762188 -0500
++++ ./CMakeLists.txt	2015-12-11 17:35:09.186655716 -0500
+@@ -427,9 +427,6 @@
+   INSTALL(DIRECTORY ${SUPERBUILD_STAGING_PREFIX}/${CMAKE_INSTALL_PREFIX}/include
+         DESTINATION .)
+ 
+-  # do we really need to install share?
+-  INSTALL(DIRECTORY ${SUPERBUILD_STAGING_PREFIX}/${CMAKE_INSTALL_PREFIX}/share
+-        DESTINATION .)
+ ENDIF(USE_SUPERBUILD)
+ 
+ # write configuration information
