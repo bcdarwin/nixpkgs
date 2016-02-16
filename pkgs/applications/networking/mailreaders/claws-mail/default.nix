@@ -13,7 +13,7 @@
 #         python requires python
 , enableLdap ? false
 , enableNetworkManager ? false
-, enablePgp ? false
+, enablePgp ? true
 , enablePluginArchive ? false
 , enablePluginFancy ? false
 , enablePluginNotificationDialogs ? true
@@ -30,7 +30,7 @@
 
 with stdenv.lib;
 
-let version = "3.12.0"; in
+let version = "3.13.1"; in
 
 stdenv.mkDerivation {
   name = "claws-mail-${version}";
@@ -40,12 +40,12 @@ stdenv.mkDerivation {
     homepage = http://www.claws-mail.org/;
     license = licenses.gpl3;
     platforms = platforms.linux;
-    maintainers = [ maintainers.khumba ];
+    maintainers = with maintainers; [ khumba fpletz ];
   };
 
   src = fetchurl {
     url = "http://www.claws-mail.org/download.php?file=releases/claws-mail-${version}.tar.xz";
-    sha256 = "1jnnwivpcplv8x4w0ibb1qcnasl37fr53lbfybhgb936l2mdcai7";
+    sha256 = "049av7r0xhjjjm1p93l2ns3xisvn125v3ncqar23cqjzgcichg5d";
   };
 
   patches = [ ./mime.patch ];
@@ -57,7 +57,7 @@ stdenv.mkDerivation {
 
   buildInputs =
     [ curl dbus dbus_glib gtk gnutls gsettings_desktop_schemas hicolor_icon_theme
-      libetpan perl pkgconfig python wrapGAppsHook
+      libetpan perl pkgconfig python wrapGAppsHook glib_networking
     ]
     ++ optional enableSpellcheck enchant
     ++ optionals (enablePgp || enablePluginSmime) [ gnupg gpgme ]
@@ -92,8 +92,9 @@ stdenv.mkDerivation {
 
   enableParallelBuilding = true;
 
-  wrapPrefixVariables = [ "GIO_EXTRA_MODULES" ];
-  GIO_EXTRA_MODULES = "${glib_networking}/lib/gio/modules";
+  preFixup = ''
+    gappsWrapperArgs+=(--prefix XDG_DATA_DIRS : "${shared_mime_info}/share")
+  '';
 
   postInstall = ''
     mkdir -p $out/share/applications

@@ -41,7 +41,7 @@ in stdenv.mkDerivation rec {
   meta = with stdenv.lib; {
     homepage = "http://www.cs.uu.nl/wiki/UHC";
     description = "Utrecht Haskell Compiler";
-    maintainers = [ maintainers.phausmann ];
+    maintainers = [ maintainers.phile314 ];
 
     # UHC i686 support is broken, see
     # https://github.com/UU-ComputerScience/uhc/issues/52
@@ -50,6 +50,8 @@ in stdenv.mkDerivation rec {
     # On Darwin, the GNU libtool is used, which does not
     # support the -static flag and thus breaks the build.
     platforms = ["x86_64-linux"];
+
+    broken = true;  # https://github.com/UU-ComputerScience/uhc/issues/69
 
   };
 }
