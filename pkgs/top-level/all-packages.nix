@@ -15875,6 +15875,8 @@ in
     motif = lesstif;
   };
 
+  ANTs = callPackage ../applications/science/biology/ANTs { };
+
   archimedes = callPackage ../applications/science/electronics/archimedes {
     stdenv = overrideCC stdenv gcc49;
   };
