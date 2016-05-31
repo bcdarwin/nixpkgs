@@ -1,10 +1,28 @@
-{ stdenv, fetchurl, jre, libX11, libXext, libXcursor, libXrandr, libXxf86vm
+{ stdenv, fetchurl, makeDesktopItem
+, jre, libX11, libXext, libXcursor, libXrandr, libXxf86vm
 , mesa, openal
 , useAlsa ? false, alsaOss ? null }:
+with stdenv.lib;
 
 assert useAlsa -> alsaOss != null;
 
-stdenv.mkDerivation {
+let
+  icon = fetchurl {
+    url = "https://hydra-media.cursecdn.com/minecraft.gamepedia.com/c/c5/Grass.png";
+    sha256 = "438c0f63e379e92af1b5b2e06cc5e3365ee272810af65ebc102304bce4fa8c4b";
+  };
+
+  desktopItem = makeDesktopItem {
+    name = "minecraft";
+    exec = "minecraft";
+    icon = "${icon}";
+    comment = "A sandbox-building game";
+    desktopName = "Minecraft";
+    genericName = "minecraft";
+    categories = "Game;";
+  };
+
+in stdenv.mkDerivation {
   name = "minecraft-2015.07.24";
 
   src = fetchurl {
@@ -22,19 +40,21 @@ stdenv.mkDerivation {
     cat > $out/bin/minecraft << EOF
     #!${stdenv.shell}
 
-    # wrapper for minecraft
-    export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:${libX11}/lib/:${libXext}/lib/:${libXcursor}/lib/:${libXrandr}/lib/:${libXxf86vm}/lib/:${mesa}/lib/:${openal}/lib/
+    export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:${makeLibraryPath [ libX11 libXext libXcursor libXrandr libXxf86vm mesa openal ]}
     ${if useAlsa then "${alsaOss}/bin/aoss" else "" } \
       ${jre}/bin/java -jar $out/minecraft.jar
     EOF
 
     chmod +x $out/bin/minecraft
+
+    mkdir -p $out/share/applications
+    ln -s ${desktopItem}/share/applications/* $out/share/applications/
   '';
 
   meta = {
       description = "A sandbox-building game";
       homepage = http://www.minecraft.net;
-      maintainers = [ stdenv.lib.maintainers.page ];
+      maintainers = with stdenv.lib.maintainers; [ page ryantm ];
       license = stdenv.lib.licenses.unfreeRedistributable;
   };
 }

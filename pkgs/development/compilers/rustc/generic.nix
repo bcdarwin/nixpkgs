@@ -1,5 +1,5 @@
 { stdenv, fetchurl, fetchgit, fetchzip, file, python2, tzdata, procps
-, llvmPackages_37, jemalloc, ncurses
+, llvm, jemalloc, ncurses, darwin, binutils
 
 , shortVersion, isRelease
 , forceBundledLLVM ? false
@@ -10,9 +10,7 @@
 , configureFlags ? []
 
 , patches
-}:
-
-assert !stdenv.isFreeBSD;
+} @ args:
 
 /* Rust's build process has a few quirks :
 
@@ -37,7 +35,9 @@ let version = if isRelease then
 
     name = "rustc-${version}";
 
-    llvmShared = llvmPackages_37.llvm.override { enableSharedLibraries = true; };
+    procps = if stdenv.isDarwin then darwin.ps else args.procps;
+
+    llvmShared = llvm.override { enableSharedLibraries = true; };
 
     platform = if stdenv.system == "i686-linux"
       then "linux-i386"
@@ -62,9 +62,9 @@ let version = if isRelease then
     meta = with stdenv.lib; {
       homepage = http://www.rust-lang.org/;
       description = "A safe, concurrent, practical language";
-      maintainers = with maintainers; [ madjar cstrahan wizeman globin havvy wkennington ];
+      maintainers = with maintainers; [ madjar cstrahan wizeman globin havvy wkennington retrry ];
       license = [ licenses.mit licenses.asl20 ];
-      platforms = platforms.linux;
+      platforms = platforms.linux ++ platforms.darwin;
     };
 
     snapshotHash = if stdenv.system == "i686-linux"
@@ -112,8 +112,8 @@ with stdenv.lib; stdenv.mkDerivation {
       mkdir -p "$out"
       cp -r bin "$out/bin"
     '' + optionalString stdenv.isLinux ''
-      patchelf --interpreter "${stdenv.glibc}/lib/${stdenv.cc.dynamicLinker}" \
-               --set-rpath "${stdenv.cc.cc}/lib/:${stdenv.cc.cc}/lib64/" \
+      patchelf --interpreter "${stdenv.glibc.out}/lib/${stdenv.cc.dynamicLinker}" \
+               --set-rpath "${stdenv.cc.cc.lib}/lib/:${stdenv.cc.cc.lib}/lib64/" \
                "$out/bin/rustc"
     '';
   };
@@ -121,7 +121,7 @@ with stdenv.lib; stdenv.mkDerivation {
   configureFlags = configureFlags
                 ++ [ "--enable-local-rust" "--local-rust-root=$snapshot" "--enable-rpath" ]
                 # ++ [ "--jemalloc-root=${jemalloc}/lib"
-                ++ [ "--default-linker=${stdenv.cc}/bin/cc" "--default-ar=${stdenv.cc.binutils}/bin/ar" ]
+                ++ [ "--default-linker=${stdenv.cc}/bin/cc" "--default-ar=${binutils.out}/bin/ar" ]
                 ++ optional (stdenv.cc.cc ? isClang) "--enable-clang"
                 ++ optional (!forceBundledLLVM) "--llvm-root=${llvmShared}";
 
@@ -164,9 +164,11 @@ with stdenv.lib; stdenv.mkDerivation {
   buildInputs = [ ncurses ]
     ++ optional (!forceBundledLLVM) llvmShared;
 
-  enableParallelBuilding = true;
+  # https://github.com/rust-lang/rust/issues/30181
+  # enableParallelBuilding = false; # missing files during linking, occasionally
 
   outputs = [ "out" "doc" ];
+  setOutputFlags = false;
 
   preCheck = "export TZDIR=${tzdata}/share/zoneinfo";
 

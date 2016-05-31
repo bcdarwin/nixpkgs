@@ -46,10 +46,10 @@ $ export NIXPKGS_ALLOW_UNFREE=1
 allowUnfreePredicate = (pkg: ...);
 </programlisting>
 
-    Example to allow flash player only:
+    Example to allow flash player and visual studio code only:
 
 <programlisting>
-allowUnfreePredicate = (pkg: pkgs.lib.hasPrefix "flashplayer-" pkg.name);
+allowUnfreePredicate = with builtins; (pkg: elem (parseDrvName pkg.name).name [ "flashplayer" "vscode" ]);
 </programlisting>
 
     </para>
@@ -89,7 +89,7 @@ packages via <literal>packageOverrides</literal></title>
 
 <para>You can define a function called
 <varname>packageOverrides</varname> in your local
-<filename>~/.nixpkgs/config</filename> to overide nix packages.  It
+<filename>~/.nixpkgs/config.nix</filename> to overide nix packages.  It
 must be a function that takes pkgs as an argument and return modified
 set of packages.
 

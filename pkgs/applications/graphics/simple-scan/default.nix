@@ -1,13 +1,14 @@
 { stdenv, fetchurl, cairo, colord, glib, gtk3, gusb, intltool, itstool
-, libusb1, libxml2, pkgconfig, sane-backends, vala, wrapGAppsHook }:
+, libusb1, libxml2, pkgconfig, sane-backends, vala, wrapGAppsHook   
+, gnome3 }:
 
-let version = "3.19.4"; in
 stdenv.mkDerivation rec {
   name = "simple-scan-${version}";
+  version = "3.21.1";
 
   src = fetchurl {
-    sha256 = "1v9sify1s38qd5sfg26m7sdg9bkrfmai2nijs4wzah7xa9p23c83";
-    url = "https://launchpad.net/simple-scan/3.19/${version}/+download/${name}.tar.xz";
+    sha256 = "00w206isni8m8qd9m8x0644s1gqg11pvgnw6zav33b0bs2h2kk79";
+    url = "https://launchpad.net/simple-scan/3.21/${version}/+download/${name}.tar.xz";
   };
 
   buildInputs = [ cairo colord glib gusb gtk3 libusb1 libxml2 sane-backends
@@ -16,9 +17,28 @@ stdenv.mkDerivation rec {
 
   configureFlags = [ "--disable-packagekit" ];
 
+  patchPhase = ''
+    sed -i -e 's#Icon=scanner#Icon=simple-scan#g' ./data/simple-scan.desktop.in
+  '';
+
   preBuild = ''
-    # Clean up stale generated .c files still referencing packagekit headers:
+    # Clean up stale .c files referencing packagekit headers as of 3.20.0:
     make clean
+  '';
+
+  postInstall = ''
+    (
+    cd ${gnome3.defaultIconTheme}/share/icons/Adwaita
+
+    for f in `find . | grep 'scanner\.'` 
+    do
+      local outFile="`echo "$out/share/icons/hicolor/$f" | sed \
+        -e 's#/devices/#/apps/#g' \
+        -e 's#scanner\.#simple-scan\.#g'`"
+      mkdir -p "`realpath -m "$outFile/.."`"
+      cp "$f" "$outFile"
+    done
+    )
   '';
 
   enableParallelBuilding = true;
@@ -26,7 +46,6 @@ stdenv.mkDerivation rec {
   doCheck = true;
 
   meta = with stdenv.lib; {
-    inherit version;
     description = "Simple scanning utility";
     longDescription = ''
       A really easy way to scan both documents and photos. You can crop out the

@@ -1,19 +1,16 @@
-{ stdenv, fetchFromGitHub,
-  SDL2, freeimage
-}:
+{ stdenv, fetchgit, SDL2, SDL2_ttf, freeimage }:
 
 stdenv.mkDerivation rec {
   name = "imv-${version}";
-  version = "1.1.0";
+  version = "2.1.2";
 
-  src = fetchFromGitHub {
-    owner = "eXeC64";
-    repo  = "imv";
-    rev = "4d1a6d581b70b25d9533c5c788aab6900ebf82bb";
-    sha256 = "1c5r4pqqypir8ymicxyn2k7mhq8nl88b3x6giaafd77ssjn0vz9r";
+  src = fetchgit {
+    url = "https://github.com/eXeC64/imv.git";
+    rev = "3e6402456b00e29f659baf26ced10f3d7205cf63";
+    sha256 = "0fhc944g7b61jrkd4wn1piq6dkpabsbxpm80pifx9dqmj16sf0pf";
   };
 
-  buildInputs = [ SDL2 freeimage ];
+  buildInputs = [ SDL2 SDL2_ttf freeimage ];
 
   configurePhase = "substituteInPlace Makefile --replace /usr $out";
 

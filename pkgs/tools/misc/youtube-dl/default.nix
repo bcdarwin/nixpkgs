@@ -1,4 +1,4 @@
-{ stdenv, fetchurl, buildPythonPackage, makeWrapper, ffmpeg, zip
+{ stdenv, fetchurl, buildPythonApplication, makeWrapper, ffmpeg, zip
 , pandoc ? null
 }:
 
@@ -9,20 +9,24 @@
 # case someone wants to use this derivation to build a Git version of
 # the tool that doesn't have the formatted man page included.
 
-buildPythonPackage rec {
+buildPythonApplication rec {
 
-  name = "youtube-dl-2016.01.01";
+  name = "youtube-dl-${version}";
+  version = "2016.05.21.2";
 
   src = fetchurl {
-    url = "http://yt-dl.org/downloads/${stdenv.lib.getVersion name}/${name}.tar.gz";
-    sha256 = "0b0pk8h2iswdiyf65c0zcwcad9dm2hid67fnfafj7d3ikp4kfbvk";
+    url = "http://yt-dl.org/downloads/${version}/${name}.tar.gz";
+    sha256 = "66f94fc97012c4c7a6338dc4df6ec62af66dcfc144c5e8c8cd8b5519756f1a98";
   };
 
   buildInputs = [ makeWrapper zip pandoc ];
 
   # Ensure ffmpeg is available in $PATH for post-processing & transcoding support.
   postInstall = stdenv.lib.optionalString (ffmpeg != null)
-    ''wrapProgram $out/bin/youtube-dl --prefix PATH : "${ffmpeg}/bin"'';
+    ''wrapProgram $out/bin/youtube-dl --prefix PATH : "${ffmpeg.bin}/bin"'';
+
+  # Requires network
+  doCheck = false;
 
   meta = with stdenv.lib; {
     homepage = http://rg3.github.io/youtube-dl/;
@@ -36,6 +40,6 @@ buildPythonPackage rec {
     '';
     license = licenses.publicDomain;
     platforms = with platforms; linux ++ darwin;
-    maintainers = with maintainers; [ bluescreen303 simons phreedom AndersonTorres fuuzetsu ];
+    maintainers = with maintainers; [ bluescreen303 phreedom AndersonTorres fuuzetsu ];
   };
 }

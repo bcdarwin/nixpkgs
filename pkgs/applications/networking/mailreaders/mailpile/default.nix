@@ -1,6 +1,6 @@
 { stdenv, fetchgit, pythonPackages, gnupg1orig, makeWrapper, openssl }:
 
-pythonPackages.buildPythonPackage rec {
+pythonPackages.buildPythonApplication rec {
   name = "mailpile-${version}";
   version = "0.4.1";
 
@@ -21,7 +21,7 @@ pythonPackages.buildPythonPackage rec {
 
   postInstall = ''
     wrapProgram $out/bin/mailpile \
-      --prefix PATH ":" "${gnupg1orig}/bin:${openssl}/bin"
+      --prefix PATH ":" "${gnupg1orig}/bin:${openssl.bin}/bin"
   '';
 
   meta = with stdenv.lib; {
@@ -29,6 +29,6 @@ pythonPackages.buildPythonPackage rec {
     homepage = https://www.mailpile.is/;
     license = [ licenses.asl20 licenses.agpl3 ];
     platforms = platforms.linux;
-    maintainers = [ maintainers.iElectric ];
+    maintainers = [ maintainers.domenkozar ];
   };
 }

@@ -1,11 +1,11 @@
 { stdenv, fetchurl, intltool, glib, pkgconfig, polkit, python, sqlite }:
 
-let version = "1.0.8"; in
-stdenv.mkDerivation {
+stdenv.mkDerivation rec {
   name = "packagekit-${version}";
+  version = "1.1.1";
 
   src = fetchurl {
-    sha256 = "1vaxn4kwdwx6p03n88k4pnbd2l6lb0cbxpcs88kjack1jml17c3l";
+    sha256 = "1i6an483vmm6y39szr2alq5vf6kfxhk3j5ca79qrshcj9jjlhcs8";
     url = "http://www.freedesktop.org/software/PackageKit/releases/PackageKit-${version}.tar.xz";
   };
 
@@ -20,7 +20,6 @@ stdenv.mkDerivation {
     "--disable-connman"
     "--disable-systemd"
     "--disable-bash-completion"
-    "--disable-browser-plugin"
     "--disable-gstreamer-plugin"
     "--disable-gtk-module"
     "--disable-command-not-found"
@@ -53,7 +52,6 @@ stdenv.mkDerivation {
   '';
 
   meta = with stdenv.lib; {
-    inherit version;
     description = "System to facilitate installing and updating packages";
     longDescription = ''
       PackageKit is a system designed to make installing and updating software

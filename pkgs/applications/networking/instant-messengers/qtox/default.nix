@@ -1,30 +1,32 @@
-{ stdenv, fetchgit, pkgconfig, libtoxcore-dev, openal, opencv,
+{ stdenv, fetchFromGitHub, pkgconfig, libtoxcore-dev, openal, opencv,
   libsodium, libXScrnSaver, glib, gdk_pixbuf, gtk2, cairo,
-  pango, atk, qrencode, ffmpeg, filter-audio, makeWrapper,
-  qtbase, qtsvg, qttools, qttranslations, sqlcipher }:
+  pango, atk, qrencode, ffmpeg, filter-audio, makeQtWrapper,
+  qtbase, qtsvg, qttools, qmakeHook, qttranslations, sqlcipher }:
 
 let
-  revision = "8b671916abdcc1d553a367a502b23ec4ea7568a1";
+  version = "1.3.0";
+  revision = "v${version}";
 in
 
 stdenv.mkDerivation rec {
-  name = "qtox-dev-20151221";
+  name = "qtox-${version}";
 
-  src = fetchgit {
-      url = "https://github.com/tux3/qTox.git";
-      rev = "${revision}";
-      md5 = "a93a63d35e506be4b21abda0986f19e7";
+  src = fetchFromGitHub {
+      owner = "tux3";
+      repo = "qTox";
+      rev = revision;
+      sha256 = "0z2rxsa23vpl4q0h63mybw7kv8n1sm6nwb93l0cc046a3n9axid8";
   };
 
   buildInputs =
     [
       libtoxcore-dev openal opencv libsodium filter-audio
       qtbase qttools qtsvg libXScrnSaver glib gtk2 cairo
-      pango atk qrencode ffmpeg qttranslations makeWrapper
+      pango atk qrencode ffmpeg qttranslations makeQtWrapper
       sqlcipher
     ];
 
-  nativeBuildInputs = [ pkgconfig ];
+  nativeBuildInputs = [ pkgconfig qmakeHook ];
 
   preConfigure = ''
     # patch .pro file for proper set of the git hash
@@ -37,18 +39,17 @@ stdenv.mkDerivation rec {
     export NIX_CFLAGS_COMPILE="$NIX_CFLAGS_COMPILE $(pkg-config --cflags cairo)"
     export NIX_CFLAGS_COMPILE="$NIX_CFLAGS_COMPILE $(pkg-config --cflags pango)"
     export NIX_CFLAGS_COMPILE="$NIX_CFLAGS_COMPILE $(pkg-config --cflags atk)"
-  '';
-
-  configurePhase = ''
-    runHook preConfigure
-    qmake
+    export NIX_CFLAGS_COMPILE="$NIX_CFLAGS_COMPILE $(pkg-config --cflags sqlcipher)"
   '';
 
   installPhase = ''
+    runHook preInstall
+
     mkdir -p $out/bin
     cp qtox $out/bin
-    wrapProgram $out/bin/qtox \
-      --prefix QT_PLUGIN_PATH : ${qtsvg}/lib/qt5/plugins
+    wrapQtProgram $out/bin/qtox
+
+    runHook postInstall
   '';
 
   enableParallelBuilding = true;

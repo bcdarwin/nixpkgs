@@ -1,6 +1,6 @@
 { stdenv, fetchurl, makeWrapper, makeDesktopItem, zlib, glib, libpng, freetype
 , xorg, fontconfig, qtbase, xkeyboard_config, alsaLib, libpulseaudio ? null
-, libredirect, quazip, less, which, unzip
+, libredirect, quazip, less, which, unzip, llvmPackages
 }:
 
 let
@@ -13,6 +13,7 @@ let
     [ zlib glib libpng freetype xorg.libSM xorg.libICE xorg.libXrender
       xorg.libXrandr xorg.libXfixes xorg.libXcursor xorg.libXinerama
       xorg.libxcb fontconfig xorg.libXext xorg.libX11 alsaLib qtbase libpulseaudio
+      llvmPackages.libcxx llvmPackages.libcxxabi
     ];
 
   desktopItem = makeDesktopItem {
@@ -30,23 +31,22 @@ in
 stdenv.mkDerivation rec {
   name = "teamspeak-client-${version}";
 
-  version = "3.0.18.1";
+  version = "3.0.19.1";
 
   src = fetchurl {
     urls = [
       "http://dl.4players.de/ts/releases/${version}/TeamSpeak3-Client-linux_${arch}-${version}.run"
       "http://teamspeak.gameserver.gamed.de/ts3/releases/${version}/TeamSpeak3-Client-linux_${arch}-${version}.run"
-      "http://files.teamspeak-services.com/releases/${version}/TeamSpeak3-Client-linux_${arch}-${version}.run"
     ];
     sha256 = if stdenv.is64bit
-                then "1bc9m2niagqmijmzlki8jmp48vhns041xdjlji9fyqay6l5mx5fw"
-                else "156dirxjys7pbximw19qs7j52my36p4kp98df3kgrsiiv8mz6v68";
+                then "173mcvrckia0mming1v9nzi0bllr4m430y9swl9kyfsvp44f5n5h"
+                else "1iansjlbalwil0nlrlxfl70zzbx009c4rccf4va0kq097rqhgznx";
   };
 
   # grab the plugin sdk for the desktop icon
   pluginsdk = fetchurl {
-    url = "http://dl.4players.de/ts/client/pluginsdk/pluginsdk_3.0.16.zip";
-    sha256 = "1qpqpj3r21wff3ly9ail4l6b57pcqycsh2hca926j14sdlvpv7kl";
+    url = "http://dl.4players.de/ts/client/pluginsdk/pluginsdk_3.0.19.1.zip";
+    sha256 = "1r1ss6zq5axr7h82inlp98zaz50041rizli5bwz3lfyipfr034ya";
   };
 
   buildInputs = [ makeWrapper less which unzip ];

@@ -1,15 +1,15 @@
 { stdenv, fetchurl, pkgconfig, makeDesktopItem, unzip
 , qtbase, qttools, makeQtWrapper, qtmultimedia, qtquick1, qtquickcontrols
-, openssl, protobuf
+, openssl, protobuf, qmakeHook
 }:
 
 stdenv.mkDerivation rec {
   name = "ricochet-${version}";
-  version = "1.1.1";
+  version = "1.1.2";
 
   src = fetchurl {
     url = "https://github.com/ricochet-im/ricochet/archive/v${version}.tar.gz";
-    sha256 = "0y79igzgl9xn00981zcyxdlks7vnqxhb4rq3x8gwxm0yr98p39ms";
+    sha256 = "1szb5vmlqal0vhan87kgbks184f7xbfay1hr3d3vm8r1lvcjjfkr";
   };
 
   desktopItem = makeDesktopItem {
@@ -27,15 +27,13 @@ stdenv.mkDerivation rec {
     openssl protobuf
   ];
 
-  nativeBuildInputs = [ pkgconfig makeQtWrapper ];
+  nativeBuildInputs = [ pkgconfig makeQtWrapper qmakeHook ];
 
   preConfigure = ''
     export NIX_CFLAGS_COMPILE="$NIX_CFLAGS_COMPILE $(pkg-config --cflags openssl)"
   '';
 
-  configureScript = "qmake";
-  dontAddPrefix = true;
-  configureFlags = [ "PREFIX=$(out)" "DEFINES+=RICOCHET_NO_PORTABLE" ];
+  qmakeFlags = [ "DEFINES+=RICOCHET_NO_PORTABLE" ];
 
   installPhase = ''
     mkdir -p $out/bin

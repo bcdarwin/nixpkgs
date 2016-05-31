@@ -21,10 +21,10 @@ stdenv.mkDerivation rec {
     --enable-checking=release
     --enable-languages=fortran
     --with-cloog=${cloog}
-    --with-gmp=${gmp}
+    --with-gmp=${gmp.dev}
     --with-isl=${isl_0_14}
     --with-mpc=${libmpc}
-    --with-mpfr=${mpfr}
+    --with-mpfr=${mpfr.dev}
     --with-native-system-header-dir=${Libsystem}/include
     --with-system-zlib
   '';
@@ -34,7 +34,7 @@ stdenv.mkDerivation rec {
   makeFlags = ["CC=clang"];
   passthru.cc = stdenv.cc.cc;
   meta = with stdenv.lib; {
-    description = "GNU Fortran compiler, part of the GNU Compiler Collection.";
+    description = "GNU Fortran compiler, part of the GNU Compiler Collection";
     homepage    = "https://gcc.gnu.org/fortran/";
     license     = licenses.gpl3Plus;
     platforms   = platforms.darwin;

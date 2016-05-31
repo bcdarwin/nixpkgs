@@ -49,8 +49,7 @@ in
   # Include some utilities that are useful for installing or repairing
   # the system.
   environment.systemPackages =
-    [ pkgs.subversion # for nixos-checkout
-      pkgs.w3m # needed for the manual anyway
+    [ pkgs.w3m # needed for the manual anyway
       pkgs.ddrescue
       pkgs.ccrypt
       pkgs.cryptsetup # needed for dm-crypt volumes
@@ -86,8 +85,7 @@ in
   system.boot.loader.kernelFile = "uImage";
 
   boot.initrd.availableKernelModules =
-    [ "mvsdio" "mmc_block" "reiserfs" "ext3" "ums-cypress" "rtc_mv"
-      "ext4" ];
+    [ "mvsdio" "reiserfs" "ext3" "ums-cypress" "rtc_mv" "ext4" ];
 
   boot.postBootCommands =
     ''

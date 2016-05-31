@@ -1,5 +1,6 @@
 #! @perl@
 
+use strict;
 use Cwd 'abs_path';
 use File::Spec;
 use File::Path;
@@ -69,6 +70,7 @@ for (my $n = 0; $n < scalar @ARGV; $n++) {
 my @attrs = ();
 my @kernelModules = ();
 my @initrdKernelModules = ();
+my @initrdAvailableKernelModules = ();
 my @modulePackages = ();
 my @imports;
 
@@ -148,7 +150,7 @@ sub pciCheck {
          $device eq "0x4331" || $device eq "0x43a0" || $device eq "0x43b1"
         ) )
      {
-        push @modulePackages, "\${config.boot.kernelPackages.broadcom_sta}";
+        push @modulePackages, "config.boot.kernelPackages.broadcom_sta";
         push @kernelModules, "wl";
      }
 
@@ -165,7 +167,7 @@ sub pciCheck {
         ) )
     {
         # we need e.g. brcmfmac43602-pcie.bin
-        push @imports, "<nixos/modules/hardware/network/broadcom-43xx.nix>";
+        push @imports, "<nixpkgs/nixos/modules/hardware/network/broadcom-43xx.nix>";
     }
 
     # Can't rely on $module here, since the module may not be loaded
@@ -349,7 +351,7 @@ foreach my $fs (read_file("/proc/self/mountinfo")) {
   fileSystems.\"$mountPoint\" =
     { device = \"$base$path\";
       fsType = \"none\";
-      options = \"bind\";
+      options = \[ \"bind\" \];
     };
 
 EOF
@@ -379,7 +381,7 @@ EOF
     # Is this a btrfs filesystem?
     if ($fsType eq "btrfs") {
         my ($status, @id_info) = runCommand("btrfs subvol show $rootDir$mountPoint");
-        if ($status != 0 || join("", @msg) =~ /ERROR:/) {
+        if ($status != 0 || join("", @id_info) =~ /ERROR:/) {
             die "Failed to retrieve subvolume info for $mountPoint\n";
         }
         my @ids = join("", @id_info) =~ m/Subvolume ID:[ \t\n]*([^ \t\n]*)/;
@@ -408,8 +410,8 @@ EOF
 EOF
 
     if (scalar @extraOptions > 0) {
-      $fileSystems .= <<EOF;
-      options = \"${\join ",", uniq(@extraOptions)}\";
+        $fileSystems .= <<EOF;
+      options = \[ ${\join " ", map { "\"" . $_ . "\"" } uniq(@extraOptions)} \];
 EOF
     }
 
@@ -417,15 +419,41 @@ EOF
     };
 
 EOF
+
+    # If this filesystem is on a LUKS device, then add a
+    # boot.initrd.luks.devices entry.
+    if (-e $device) {
+        my $deviceName = basename(abs_path($device));
+        if (-e "/sys/class/block/$deviceName"
+            && read_file("/sys/class/block/$deviceName/dm/uuid",  err_mode => 'quiet') =~ /^CRYPT-LUKS/)
+        {
+            my @slaves = glob("/sys/class/block/$deviceName/slaves/*");
+            if (scalar @slaves == 1) {
+                my $slave = "/dev/" . basename($slaves[0]);
+                if (-e $slave) {
+                    my $dmName = read_file("/sys/class/block/$deviceName/dm/name");
+                    chomp $dmName;
+                    $fileSystems .= "  boot.initrd.luks.devices.\"$dmName\".device = \"${\(findStableDevPath $slave)}\";\n\n";
+                }
+            }
+        }
+    }
 }
 
 
 # Generate the hardware configuration file.
 
-sub toNixExpr {
+sub toNixStringList {
     my $res = "";
     foreach my $s (@_) {
         $res .= " \"$s\"";
+    }
+    return $res;
+}
+sub toNixList {
+    my $res = "";
+    foreach my $s (@_) {
+        $res .= " $s";
     }
     return $res;
 }
@@ -433,7 +461,7 @@ sub toNixExpr {
 sub multiLineList {
     my $indent = shift;
     return " [ ]" if !@_;
-    $res = "\n${indent}[ ";
+    my $res = "\n${indent}[ ";
     my $first = 1;
     foreach my $s (@_) {
         $res .= "$indent  " if !$first;
@@ -444,13 +472,13 @@ sub multiLineList {
     return $res;
 }
 
-my $initrdAvailableKernelModules = toNixExpr(uniq @initrdAvailableKernelModules);
-my $kernelModules = toNixExpr(uniq @kernelModules);
-my $modulePackages = toNixExpr(uniq @modulePackages);
+my $initrdAvailableKernelModules = toNixStringList(uniq @initrdAvailableKernelModules);
+my $kernelModules = toNixStringList(uniq @kernelModules);
+my $modulePackages = toNixList(uniq @modulePackages);
 
 my $fsAndSwap = "";
 if (!$noFilesystems) {
-    $fsAndSwap = "\n${fileSystems}  ";
+    $fsAndSwap = "\n$fileSystems  ";
     $fsAndSwap .= "swapDevices =" . multiLineList("    ", @swapDevices) . ";\n";
 }
 
@@ -467,7 +495,7 @@ my $hwConfig = <<EOF;
   boot.kernelModules = [$kernelModules ];
   boot.extraModulePackages = [$modulePackages ];
 $fsAndSwap
-  nix.maxJobs = $cpus;
+  nix.maxJobs = lib.mkDefault $cpus;
 ${\join "", (map { "  $_\n" } (uniq @attrs))}}
 EOF
 
@@ -487,7 +515,7 @@ if ($showHardwareConfig) {
     if ($force || ! -e $fn) {
         print STDERR "writing $fn...\n";
 
-        my $bootloaderConfig = "";
+        my $bootLoaderConfig = "";
         if (-e "/sys/firmware/efi/efivars") {
             $bootLoaderConfig = <<EOF;
   # Use the gummiboot efi boot loader.
@@ -561,7 +589,7 @@ $bootLoaderConfig
   # };
 
   # The NixOS release to be compatible with for stateful data such as databases.
-  system.stateVersion = "@nixosRelease@";
+  system.stateVersion = "${\(qw(@nixosRelease@))}";
 
 }
 EOF

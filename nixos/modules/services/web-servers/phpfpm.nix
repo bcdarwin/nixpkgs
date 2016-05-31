@@ -19,6 +19,12 @@ let
     ${concatStringsSep "\n" (mapAttrsToList (n: v: "[${n}]\n${v}") cfg.poolConfigs)}
   '';
 
+  phpIni = pkgs.writeText "php.ini" ''
+    ${readFile "${cfg.phpPackage}/etc/php.ini"}
+
+    ${cfg.phpOptions}
+  '';
+
 in {
 
   options = {
@@ -44,26 +50,33 @@ in {
         '';
       };
 
-      phpIni = mkOption {
-        type = types.path;
-        description = "PHP configuration file to use.";
+      phpOptions = mkOption {
+        type = types.lines;
+        default = "";
+        example =
+          ''
+            date.timezone = "CET"
+          '';
+        description =
+          "Options appended to the PHP configuration file <filename>php.ini</filename>.";
       };
 
       poolConfigs = mkOption {
         type = types.attrsOf types.lines;
         default = {};
-        example = {
-          mypool = ''
-            listen = /run/phpfpm/mypool
-            user = nobody
-            pm = dynamic
-            pm.max_children = 75
-            pm.start_servers = 10
-            pm.min_spare_servers = 5
-            pm.max_spare_servers = 20
-            pm.max_requests = 500
-          '';
-        };
+        example = literalExample ''
+          { mypool = '''
+              listen = /run/phpfpm/mypool
+              user = nobody
+              pm = dynamic
+              pm.max_children = 75
+              pm.start_servers = 10
+              pm.min_spare_servers = 5
+              pm.max_spare_servers = 20
+              pm.max_requests = 500
+            ''';
+          }
+        '';
         description = ''
           A mapping between PHP FPM pool names and their configurations.
           See the documentation on <literal>php-fpm.conf</literal> for
@@ -82,12 +95,10 @@ in {
         mkdir -p "${stateDir}"
       '';
       serviceConfig = {
-        ExecStart = "${cfg.phpPackage}/sbin/php-fpm -y ${cfgFile} -c ${cfg.phpIni}";
+        ExecStart = "${cfg.phpPackage}/bin/php-fpm -y ${cfgFile} -c ${phpIni}";
         PIDFile = pidFile;
       };
     };
-
-    services.phpfpm.phpIni = mkDefault "${cfg.phpPackage}/etc/php-recommended.ini";
 
   };
 }

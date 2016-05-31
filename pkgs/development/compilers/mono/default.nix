@@ -1,4 +1,4 @@
-{ stdenv, fetchurl, bison, pkgconfig, glib, gettext, perl, libgdiplus, libX11, callPackage, ncurses, zlib, withLLVM ? false, cacert }:
+{ stdenv, fetchurl, bison, pkgconfig, glib, gettext, perl, libgdiplus, libX11, callPackage, ncurses, zlib, withLLVM ? false, cacert, Foundation, libobjc }:
 
 let
   llvm     = callPackage ./llvm.nix { };
@@ -14,17 +14,19 @@ stdenv.mkDerivation rec {
 
   buildInputs =
     [ bison pkgconfig glib gettext perl libgdiplus libX11 ncurses zlib
-    ];
+    ]
+    ++ (stdenv.lib.optionals stdenv.isDarwin [ Foundation libobjc ]);
+
   propagatedBuildInputs = [glib];
 
-  NIX_LDFLAGS = "-lgcc_s" ;
+  NIX_LDFLAGS = if stdenv.isDarwin then "" else "-lgcc_s" ;
 
   # To overcome the bug https://bugzilla.novell.com/show_bug.cgi?id=644723
   dontDisableStatic = true;
 
   # In fact I think this line does not help at all to what I
   # wanted to achieve: have mono to find libgdiplus automatically
-  configureFlags = "--x-includes=${libX11}/include --x-libraries=${libX11}/lib --with-libgdiplus=${libgdiplus}/lib/libgdiplus.so ${llvmOpts}";
+  configureFlags = "--x-includes=${libX11.dev}/include --x-libraries=${libX11.out}/lib --with-libgdiplus=${libgdiplus}/lib/libgdiplus.so ${llvmOpts}";
 
   # Attempt to fix this error when running "mcs --version":
   # The file /nix/store/xxx-mono-2.4.2.1/lib/mscorlib.dll is an invalid CIL image
@@ -52,7 +54,7 @@ stdenv.mkDerivation rec {
   # http://www.mono-project.com/Config_DllMap
   postBuild = ''
     find . -name 'config' -type f | while read i; do
-        sed -i "s@libX11.so.6@${libX11}/lib/libX11.so.6@g" $i
+        sed -i "s@libX11.so.6@${libX11.out}/lib/libX11.so.6@g" $i
         sed -i "s@/.*libgdiplus.so@${libgdiplus}/lib/libgdiplus.so@g" $i
     done
   '';
@@ -63,12 +65,17 @@ stdenv.mkDerivation rec {
   postInstall = ''
     echo "Updating Mono key store"
     $out/bin/cert-sync ${cacert}/etc/ssl/certs/ca-bundle.crt
+  ''
+  # According to [1], gmcs is just mcs
+  # [1] https://github.com/mono/mono/blob/master/scripts/gmcs.in
+  + ''
+    ln -s $out/bin/mcs $out/bin/gmcs
   '';
 
   meta = {
     homepage = http://mono-project.com/;
     description = "Cross platform, open source .NET development framework";
-    platforms = with stdenv.lib.platforms; linux;
+    platforms = with stdenv.lib.platforms; darwin ++ linux;
     maintainers = with stdenv.lib.maintainers; [ viric thoughtpolice obadz ];
     license = stdenv.lib.licenses.free; # Combination of LGPL/X11/GPL ?
   };

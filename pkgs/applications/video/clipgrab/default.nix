@@ -1,8 +1,8 @@
-{ stdenv, fetchurl, makeDesktopItem, ffmpeg, qt4 }:
+{ stdenv, fetchurl, makeDesktopItem, ffmpeg, qt4, qmake4Hook }:
 
-let version = "3.5.6"; in
 stdenv.mkDerivation rec {
   name = "clipgrab-${version}";
+  version = "3.5.6";
 
   src = fetchurl {
     sha256 = "0wm6hqaq6ydbvvd0fqkfydxd5h7gf4di7lvq63xgxl4z40jqc25n";
@@ -11,16 +11,15 @@ stdenv.mkDerivation rec {
   };
 
   buildInputs = [ ffmpeg qt4 ];
+  nativeBuildInputs = [ qmake4Hook ];
 
   postPatch = stdenv.lib.optionalString (ffmpeg != null) ''
   substituteInPlace converter_ffmpeg.cpp \
-    --replace '"ffmpeg"' '"${ffmpeg}/bin/ffmpeg"' \
-    --replace '"ffmpeg ' '"${ffmpeg}/bin/ffmpeg '
+    --replace '"ffmpeg"' '"${ffmpeg.bin}/bin/ffmpeg"' \
+    --replace '"ffmpeg ' '"${ffmpeg.bin}/bin/ffmpeg '
   '';
 
-  configurePhase = ''
-    qmake clipgrab.pro
-  '';
+  qmakeFlags = [ "clipgrab.pro" ];
 
   enableParallelBuilding = true;
 
@@ -41,7 +40,6 @@ stdenv.mkDerivation rec {
   '';
 
   meta = with stdenv.lib; {
-    inherit version;
     description = "Video downloader for YouTube and other sites";
     longDescription = ''
       ClipGrab is a free downloader and converter for YouTube, Vimeo, Metacafe,

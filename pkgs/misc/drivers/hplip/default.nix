@@ -1,25 +1,25 @@
 { stdenv, fetchurl, substituteAll
 , pkgconfig
 , cups, zlib, libjpeg, libusb1, pythonPackages, sane-backends, dbus, usbutils
-, net_snmp, polkit
+, net_snmp, openssl, polkit
+, bash, coreutils, utillinux
 , qtSupport ? true, qt4, pyqt4
 , withPlugin ? false
 }:
 
 let
 
-  version = "3.15.11";
-
   name = "hplip-${version}";
+  version = "3.16.5";
 
   src = fetchurl {
     url = "mirror://sourceforge/hplip/${name}.tar.gz";
-    sha256 = "0vbw815a3wffp6l5m7j6f78xwp9pl1vn43ppyf0lp8q4vqdp3i1k";
+    sha256 = "1nay65q1zmx2jxiwn66n7mlr73azacz5097gw98kqqf90dh522f6";
   };
 
   plugin = fetchurl {
     url = "http://www.openprinting.org/download/printdriver/auxfiles/HP/plugins/${name}-plugin.run";
-    sha256 = "00ii36y3914jd8zz4h6rn3xrf1w8szh1z8fngbl2qvs3qr9cm1m9";
+    sha256 = "15qrcd3ndnxri6pfdfmsjyv2f3zfkig80yghs76jbsm106rp8g3q";
   };
 
   hplipState =
@@ -59,6 +59,7 @@ stdenv.mkDerivation {
     sane-backends
     dbus
     net_snmp
+    openssl
   ] ++ stdenv.lib.optionals qtSupport [
     qt4
   ];
@@ -83,7 +84,7 @@ stdenv.mkDerivation {
     find . -type f -exec sed -i \
       -e s,/etc/hp,$out/etc/hp, \
       -e s,/etc/sane.d,$out/etc/sane.d, \
-      -e s,/usr/include/libusb-1.0,${libusb1}/include/libusb-1.0, \
+      -e s,/usr/include/libusb-1.0,${libusb1.dev}/include/libusb-1.0, \
       -e s,/usr/share/hal/fdi/preprobe/10osvendor,$out/share/hal/fdi/preprobe/10osvendor, \
       -e s,/usr/lib/systemd/system,$out/lib/systemd/system, \
       -e s,/var/lib/hp,$out/var/lib/hp, \
@@ -113,8 +114,7 @@ stdenv.mkDerivation {
 
   enableParallelBuilding = true;
 
-  postInstall = stdenv.lib.optionalString withPlugin
-    ''
+  postInstall = stdenv.lib.optionalString withPlugin ''
     sh ${plugin} --noexec --keep
     cd plugin_tmp
 
@@ -176,10 +176,17 @@ stdenv.mkDerivation {
     wrapPythonProgramsIn $out/lib "$out $pythonPath"
 
     substituteInPlace $out/etc/hp/hplip.conf --replace /usr $out
+  '' + stdenv.lib.optionalString (!withPlugin) ''
+    # A udev rule to notify users that they need the binary plugin.
+    # Needs a lot of patching but might save someone a bit of confusion:
+    substituteInPlace $out/etc/udev/rules.d/56-hpmud.rules \
+      --replace {,${bash}}/bin/sh \
+      --replace {/usr,${coreutils}}/bin/nohup \
+      --replace {,${utillinux}/bin/}logger \
+      --replace {/usr,$out}/bin
   '';
 
   meta = with stdenv.lib; {
-    inherit version;
     description = "Print, scan and fax HP drivers for Linux";
     homepage = http://hplipopensource.com/;
     license = if withPlugin

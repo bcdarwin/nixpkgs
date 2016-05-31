@@ -1,9 +1,11 @@
 { stdenv, fetchurl, pkgconfig, zlib, libjpeg, libpng, libtiff, pam
-, dbus, acl, gmp, darwin
+, dbus, systemd, acl, gmp, darwin
 , libusb ? null, gnutls ? null, avahi ? null, libpaper ? null
 }:
 
-let version = "2.0.4"; in
+### IMPORTANT: before updating cups, make sure the nixos/tests/printing.nix test
+### works at least for your platform.
+let version = "2.1.3"; in
 
 with stdenv.lib;
 stdenv.mkDerivation {
@@ -13,11 +15,14 @@ stdenv.mkDerivation {
 
   src = fetchurl {
     url = "https://www.cups.org/software/${version}/cups-${version}-source.tar.bz2";
-    sha256 = "1gaakz24k6x5nc09rmpiq0xq20j1qdjc3szag8qwmyi4ky6ydmg1";
+    sha256 = "1lyl3z01xhg9xb9c8m42398c6h9kw8qr6jwiv8bjdsjab11hv9rn";
   };
 
+  # FIXME: the cups libraries contains some $out/share strings so can't be split.
+  outputs = [ "dev" "out" "man" ]; # TODO: above
+
   buildInputs = [ pkgconfig zlib libjpeg libpng libtiff libusb gnutls libpaper ]
-    ++ optionals stdenv.isLinux [ avahi pam dbus.libs acl ]
+    ++ optionals stdenv.isLinux [ avahi pam dbus systemd acl ]
     ++ optionals stdenv.isDarwin (with darwin; [
       configd apple_sdk.frameworks.ApplicationServices
     ]);
@@ -51,7 +56,6 @@ stdenv.mkDerivation {
       # Idem for /etc.
       "PAMDIR=$(out)/etc/pam.d"
       "DBUSDIR=$(out)/etc/dbus-1"
-      "INITDIR=$(out)/etc/rc.d"
       "XINETD=$(out)/etc/xinetd.d"
       "SERVERROOT=$(out)/etc/cups"
       # Idem for /usr.
@@ -61,9 +65,14 @@ stdenv.mkDerivation {
       "CUPS_PRIMARY_SYSTEM_GROUP=root"
     ];
 
+  enableParallelBuilding = true;
+
   postInstall = ''
       # Delete obsolete stuff that conflicts with cups-filters.
       rm -rf $out/share/cups/banners $out/share/cups/data/testprint
+
+      mkdir $dev/bin
+      mv $out/bin/cups-config $dev/bin/
 
       # Rename systemd files provided by CUPS
       for f in $out/lib/systemd/system/*; do
@@ -87,7 +96,7 @@ stdenv.mkDerivation {
     homepage = https://cups.org/;
     description = "A standards-based printing system for UNIX";
     license = licenses.gpl2; # actually LGPL for the library and GPL for the rest
-    maintainers = with maintainers; [ urkud simons jgeerds ];
+    maintainers = with maintainers; [ urkud jgeerds ];
     platforms = platforms.linux;
   };
 }

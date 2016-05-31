@@ -34,9 +34,9 @@
 
 { overrides
 
-, lib, newScope, stdenv, fetchurl, fetchgit, fetchFromGitHub, fetchhg
+, lib, newScope, stdenv, fetchurl, fetchgit, fetchFromGitHub, fetchhg, runCommand
 
-, emacs, texinfo, makeWrapper
+, emacs, texinfo, lndir, makeWrapper
 , trivialBuild
 , melpaBuild
 
@@ -59,8 +59,12 @@ let
     inherit lib;
   };
 
+  orgPackages = import ../applications/editors/emacs-modes/org-packages.nix {
+    inherit fetchurl lib stdenv texinfo;
+  };
+
   emacsWithPackages = import ../build-support/emacs/wrapper.nix {
-    inherit lib makeWrapper stdenv;
+    inherit lib lndir makeWrapper stdenv runCommand;
   };
 
   packagesFun = self: with self; {
@@ -408,7 +412,7 @@ let
     packageRequires = [ dash ];
     files = [ "dash-functional.el" ];
     meta = {
-      description = "Collection of useful combinators for Emacs Lisp.";
+      description = "Collection of useful combinators for Emacs Lisp";
       license = gpl3Plus;
     };
   };
@@ -711,54 +715,6 @@ let
     };
   };
 
-  flycheck = melpaBuild rec {
-    pname   = "flycheck";
-    version = "0.25.1";
-    src = fetchFromGitHub {
-      owner  = pname;
-      repo   = pname;
-      rev    = version;
-      sha256 = "19mnx2zm71qrf7qf3mk5kriv5vgq0nl67lj029n63wqd8jcjb5fi";
-    };
-    packageRequires = [ dash let-alist pkg-info seq ];
-    meta = {
-      description = "On-the-fly syntax checking, intended as replacement for the older Flymake which is part of Emacs";
-      license = gpl3Plus;
-    };
-  };
-
-  flycheck-haskell = melpaBuild rec {
-    pname   = "flycheck-haskell";
-    version = "0.7.2";
-    src = fetchFromGitHub {
-      owner  = "flycheck";
-      repo   = pname;
-      rev    = version;
-      sha256 = "0143lcn6g46g7skm4r6lqq09s8mr3268rikbzlh65qg80rpg9frj";
-    };
-    packageRequires = [ dash flycheck haskell-mode let-alist pkg-info ];
-    meta = {
-      description = "Improved Haskell support for Flycheck";
-      license = gpl3Plus;
-    };
-  };
-
-  flycheck-pos-tip = melpaBuild rec {
-    pname   = "flycheck-pos-tip";
-    version = "20140813";
-    src = fetchFromGitHub {
-      owner  = "flycheck";
-      repo   = pname;
-      rev    = "5b3a203bbdb03e4f48d1654efecd71f44376e199";
-      sha256 = "0b4x24aq0jh4j4bjv0fqyaz6hzh3gqf57k9763jj9rl32cc3dpnp";
-    };
-    packageRequires = [ flycheck popup ];
-    meta = {
-      description = "Flycheck errors display in tooltip";
-      license = gpl3Plus;
-    };
-  };
-
   ghc-mod = melpaBuild rec {
     pname = "ghc";
     version = external.ghc-mod.version;
@@ -768,6 +724,19 @@ let
     fileSpecs = [ "elisp/*.el" ];
     meta = {
       description = "An extension of haskell-mode that provides completion of symbols and documentation browsing";
+      license = bsd3;
+    };
+  };
+
+  hindent = melpaBuild rec {
+    pname = "hindent";
+    version = external.hindent.version;
+    src = external.hindent.src;
+    packageRequires = [ haskell-mode ];
+    propagatedUserEnvPkgs = [ external.hindent ];
+    fileSpecs = [ "elisp/*.el" ];
+    meta = {
+      description = "Indent haskell code using the \"hindent\" program";
       license = bsd3;
     };
   };
@@ -796,20 +765,6 @@ let
     };
   };
 
-  # Deprecated in favor of git-commit
-  git-commit-mode = melpaBuild rec {
-    pname = "git-commit-mode";
-    version = "1.0.0";
-    src = fetchFromGitHub {
-      owner  = "magit";
-      repo   = "git-modes";
-      rev    = version;
-      sha256 = "12a1xs3w2dp1a55qhc01dwjkavklgfqnn3yw85dhi4jdz8r8j7m0";
-    };
-    files = [ "git-commit-mode.el" ];
-    meta = git-commit.meta;
-  };
-
   git-gutter = melpaBuild rec {
     pname = "git-gutter";
     version = "20150930";
@@ -827,20 +782,6 @@ let
   };
 
   #TODO git-gutter-fringe
-
-  # Deprecated in favor of git-rebase
-  git-rebase-mode = melpaBuild rec {
-    pname = "git-rebase-mode";
-    version = "1.0.0";
-    src = fetchFromGitHub {
-      owner  = "magit";
-      repo   = "git-modes";
-      rev    = version;
-      sha256 = "12a1xs3w2dp1a55qhc01dwjkavklgfqnn3yw85dhi4jdz8r8j7m0";
-    };
-    files = [ "git-rebase-mode.el" ];
-    meta = git-rebase.meta;
-  };
 
   git-timemachine = melpaBuild rec {
     pname = "git-timemachine";
@@ -994,22 +935,6 @@ let
     };
     meta = {
       description = "Haskell language support for Emacs";
-      license = gpl3Plus;
-    };
-  };
-
-  helm = melpaBuild rec {
-    pname   = "helm";
-    version = "20150105";
-    src = fetchFromGitHub {
-      owner  = "emacs-helm";
-      repo   = pname;
-      rev    = "e5608ad86e7ca72446a4b1aa0faf604200ffe895";
-      sha256 = "0n2kr6pyzcsi8pq6faxz2y8kicz1gmvj98fzzlq3a107dqqp25ay";
-    };
-    packageRequires = [ async ];
-    meta = {
-      description = "An incremental completion and selection narrowing framework for Emacs";
       license = gpl3Plus;
     };
   };
@@ -1185,85 +1110,6 @@ let
     };
   };
 
-  magit = melpaBuild rec {
-    pname   = "magit";
-    version = "2.3.1";
-    src = fetchFromGitHub {
-      owner  = pname;
-      repo   = pname;
-      rev    = version;
-      sha256 = "01x9kahr3szzc00wlfrihl4x28yrq065fq4rpzx9dxiksayk24pd";
-    };
-    packageRequires = [ dash git-commit magit-popup with-editor ];
-    fileSpecs = [ "lisp/magit-utils.el"
-                  "lisp/magit-section.el"
-                  "lisp/magit-git.el"
-                  "lisp/magit-mode.el"
-                  "lisp/magit-process.el"
-                  "lisp/magit-core.el"
-                  "lisp/magit-diff.el"
-                  "lisp/magit-wip.el"
-                  "lisp/magit-apply.el"
-                  "lisp/magit-log.el"
-                  "lisp/magit.el"
-                  "lisp/magit-sequence.el"
-                  "lisp/magit-commit.el"
-                  "lisp/magit-remote.el"
-                  "lisp/magit-bisect.el"
-                  "lisp/magit-stash.el"
-                  "lisp/magit-blame.el"
-                  "lisp/magit-ediff.el"
-                  "lisp/magit-extras.el"
-                  "Documentation/magit.texi"
-                  "Documentation/AUTHORS.md"
-                  "COPYING"
-                ];
-    meta = {
-      description = "Emacs interface for Git that aspires to be a complete Git porcelain";
-      license = gpl3Plus;
-    };
-  };
-  git-commit = melpaBuild rec {
-    pname = "git-commit";
-    version = magit.version;
-    src = magit.src;
-    packageRequires = [ dash with-editor ];
-    fileSpecs = [ "lisp/git-commit.el" ];
-    meta = magit.meta // {
-      description = "Emacs mode for editig Git commit messages";
-    };
-  };
-  git-rebase = melpaBuild rec {
-    pname = "git-rebase";
-    version = magit.version;
-    src = magit.src;
-    packageRequires = [ dash with-editor magit ];
-    fileSpecs = [ "lisp/git-rebase.el" ];
-    meta = magit.meta // {
-      description = "Emacs major-mode which makes editing rebase scripts more fun";
-    };
-  };
-  magit-popup = melpaBuild rec {
-    pname = "magit-popup";
-    version = magit.version;
-    src = magit.src;
-    packageRequires = [ dash with-editor ];
-    fileSpecs = [ "Documentation/magit-popup.texi" "lisp/magit-popup.el" ];
-    meta = magit.meta // {
-      description = "Infix arguments with feedback in a buffer library for Emacs";
-    };
-  };
-  with-editor = melpaBuild rec {
-    pname = "with-editor";
-    version = magit.version;
-    src = magit.src;
-    packageRequires = [ async dash ];
-    fileSpecs = [ "Documentation/with-editor.texi" "lisp/with-editor.el" ];
-    meta = magit.meta // {
-      description = "Use the Emacsclient as EDITOR of child processes library for Emacs";
-    };
-  };
-
   markdown-toc = melpaBuild rec {
     pname = "markdown-toc";
     version = "0.0.8";
@@ -1346,19 +1192,6 @@ let
     files = [ "${pname}.el" ];
     meta = {
       description = "Blogging with org-mode and jekyll without alien yaml headers";
-      license = gpl3Plus;
-    };
-  };
-
-  org-plus-contrib = elpaBuild rec {
-    pname   = "org-plus-contrib";
-    version = "20150406";
-    src = fetchurl {
-      url    = "http://orgmode.org/elpa/${pname}-${version}.tar";
-      sha256 = "1ny2myg4rm75ab2gl5rqrwy7h53q0vv18df8gk3zv13kljj76c6i";
-    };
-    meta = {
-      description = "Notes, TODO lists, projects, and authoring in plain-text with Emacs";
       license = gpl3Plus;
     };
   };
@@ -1560,7 +1393,7 @@ let
     };
     packageRequires = [ dash ];
     meta = {
-      description = "Hiding and/or highlighting the list of minor modes in the Emacs mode-line.";
+      description = "Hiding and/or highlighting the list of minor modes in the Emacs mode-line";
       license = gpl3Plus;
     };
   };
@@ -1576,7 +1409,7 @@ let
       sha256 = "1wvjisi26lb4g5rjq80kq9jmf1r2m3isy47nwrnahfzxk886qfbq";
       };
     meta = {
-      description = "A major mode for editing rust code.";
+      description = "A major mode for editing rust code";
       license = asl20;
     };
   };
@@ -1894,5 +1727,6 @@ in
     // melpaPackages self
     // elpaPackages self
     // melpaStablePackages self
+    // orgPackages self
     // packagesFun self
   )

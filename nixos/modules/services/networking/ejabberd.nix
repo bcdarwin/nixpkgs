@@ -32,6 +32,7 @@ in {
       package = mkOption {
         type = types.package;
         default = pkgs.ejabberd;
+        defaultText = "pkgs.ejabberd";
         description = "ejabberd server package to use";
       };
 
@@ -77,6 +78,12 @@ in {
         description = "Configuration dumps that should be loaded on the first startup";
         example = literalExample "[ ./myejabberd.dump ]";
       };
+
+      imagemagick = mkOption {
+        type = types.bool;
+        default = false;
+        description = "Add ImageMagick to server's path; allows for image thumbnailing";
+      };
     };
 
   };
@@ -104,7 +111,7 @@ in {
       description = "ejabberd server";
       wantedBy = [ "multi-user.target" ];
       after = [ "network.target" ];
-      path = [ pkgs.findutils pkgs.coreutils ];
+      path = [ pkgs.findutils pkgs.coreutils ] ++ lib.optional cfg.imagemagick pkgs.imagemagick;
 
       serviceConfig = {
         Type = "forking";

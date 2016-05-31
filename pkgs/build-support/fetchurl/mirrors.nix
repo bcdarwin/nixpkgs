@@ -54,13 +54,14 @@ rec {
     https://gnupg.org/ftp/gcrypt/
     http://www.ring.gr.jp/pub/net/
     http://gd.tuwien.ac.at/privacy/
-    http://mirrors.dotsrc.org/
-    http://ftp.heanet.ie/mirrors/ftp.gnupg.org/
-    http://www.mirrorservice.org/sites/ftp.gnupg.org/
+    http://mirrors.dotsrc.org/gcrypt/
+    http://ftp.heanet.ie/mirrors/ftp.gnupg.org/gcrypt/
+    http://www.mirrorservice.org/sites/ftp.gnupg.org/gcrypt/
   ];
 
   # kernel.org's /pub (/pub/{linux,software}) tree.
   kernel = [
+    http://cdn.kernel.org/pub/
     http://www.all.kernel.org/pub/
     http://ramses.wh2.tu-dresden.de/pub/mirrors/kernel.org/
     http://linux-kernel.uio.no/pub/
@@ -333,4 +334,22 @@ rec {
     ftp://ftp.halifax.rwth-aachen.de/pub/OpenBSD/
     ftp://mirror.switch.ch/pub/OpenBSD/
   ];
+
+  # Steam Runtime mirrors
+  steamrt = [
+    http://repo.steampowered.com/steamrt/
+    https://abbradar.net/steamrt/
+  ];
+
+  # Python PyPI mirrors
+  pypi = [
+    https://pypi.io/packages/source/
+  ];
+
+  # Mozilla projects.
+  mozilla = [
+    http://download.cdn.mozilla.net/pub/mozilla.org/
+    https://archive.mozilla.org/pub/
+  ];
+
 }

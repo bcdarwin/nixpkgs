@@ -1,6 +1,6 @@
 { stdenv, fetchzip, python3Packages, openssl, acl }:
 
-python3Packages.buildPythonPackage rec {
+python3Packages.buildPythonApplication rec {
   name = "attic-${version}";
   version = "0.16";
   namePrefix = "";
@@ -15,7 +15,7 @@ python3Packages.buildPythonPackage rec {
     [ cython msgpack openssl acl llfuse ];
 
   preConfigure = ''
-    export ATTIC_OPENSSL_PREFIX="${openssl}"
+    export ATTIC_OPENSSL_PREFIX="${openssl.dev}"
     substituteInPlace setup.py --replace "version=versioneer.get_version()" "version='${version}'"
   '';
 

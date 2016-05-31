@@ -3,7 +3,8 @@
    (http://pypi.python.org/pypi/setuptools/), which represents a large
    number of Python packages nowadays.  */
 
-{ python, setuptools, unzip, wrapPython, lib, bootstrapped-pip }:
+{ python, setuptools, unzip, wrapPython, lib, bootstrapped-pip
+, ensureNewerSourcesHook }:
 
 { name
 
@@ -19,9 +20,6 @@
 # passed to "python setup.py build_ext"
 # https://github.com/pypa/pip/issues/881
 , setupPyBuildFlags ? []
-
-# enable tests by default
-, doCheck ? true
 
 # DEPRECATED: use propagatedBuildInputs
 , pythonPath ? []
@@ -41,6 +39,11 @@
 # generated binaries.
 , makeWrapperArgs ? []
 
+# Additional flags to pass to "pip install".
+, installFlags ? []
+
+, format ? "setup"
+
 , ... } @ attrs:
 
 
@@ -53,17 +56,60 @@ let
   # use setuptools shim (so that setuptools is imported before distutils)
   # pip does the same thing: https://github.com/pypa/pip/pull/3265
   setuppy = ./run_setup.py;
-  # For backwards compatibility, let's use an alias
-  doInstallCheck = doCheck;
+
+  formatspecific =
+    if format == "wheel" then
+      {
+        unpackPhase = ''
+          mkdir dist
+          cp $src dist/"''${src#*-}"
+        '';
+
+        # Wheels are pre-compiled
+        buildPhase = attrs.buildPhase or ":";
+        installCheckPhase = attrs.checkPhase or ":";
+
+        # Wheels don't have any checks to run
+        doInstallCheck = attrs.doCheck or false;
+      }
+    else if format == "setup" then
+      {
+        # propagate python/setuptools to active setup-hook in nix-shell
+        propagatedBuildInputs =
+          propagatedBuildInputs ++ [ python setuptools ];
+
+        # we copy nix_run_setup.py over so it's executed relative to the root of the source
+        # many project make that assumption
+        buildPhase = attrs.buildPhase or ''
+          runHook preBuild
+          cp ${setuppy} nix_run_setup.py
+          ${python.interpreter} nix_run_setup.py ${lib.optionalString (setupPyBuildFlags != []) ("build_ext " + (lib.concatStringsSep " " setupPyBuildFlags))} bdist_wheel
+          runHook postBuild
+        '';
+
+        installCheckPhase = attrs.checkPhase or ''
+          runHook preCheck
+          ${python.interpreter} nix_run_setup.py test
+          runHook postCheck
+        '';
+
+        # Python packages that are installed with setuptools
+        # are typically distributed with tests.
+        # With Python it's a common idiom to run the tests
+        # after the software has been installed.
+
+        # For backwards compatibility, let's use an alias
+        doInstallCheck = attrs.doCheck or true;
+      }
+    else
+      throw "Unsupported format ${format}";
 in
 python.stdenv.mkDerivation (builtins.removeAttrs attrs ["disabled" "doCheck"] // {
   name = namePrefix + name;
 
   buildInputs = [ wrapPython bootstrapped-pip ] ++ buildInputs ++ pythonPath
+    ++ [ (ensureNewerSourcesHook { year = "1980"; }) ]
     ++ (lib.optional (lib.hasSuffix "zip" attrs.src.name or "") unzip);
-
-  # propagate python/setuptools to active setup-hook in nix-shell
-  propagatedBuildInputs = propagatedBuildInputs ++ [ python setuptools ];
 
   pythonPath = pythonPath;
 
@@ -77,14 +123,8 @@ python.stdenv.mkDerivation (builtins.removeAttrs attrs ["disabled" "doCheck"] //
     runHook postConfigure
   '';
 
-  # we copy nix_run_setup.py over so it's executed relative to the root of the source
-  # many project make that assumption
-  buildPhase = attrs.buildPhase or ''
-    runHook preBuild
-    cp ${setuppy} nix_run_setup.py
-    ${python.interpreter} nix_run_setup.py ${lib.optionalString (setupPyBuildFlags != []) ("build_ext " + (lib.concatStringsSep " " setupPyBuildFlags))} bdist_wheel
-    runHook postBuild
-  '';
+  # Python packages don't have a checkPhase, only an installCheckPhase
+  doCheck = false;
 
   installPhase = attrs.installPhase or ''
     runHook preInstall
@@ -93,26 +133,16 @@ python.stdenv.mkDerivation (builtins.removeAttrs attrs ["disabled" "doCheck"] //
     export PYTHONPATH="$out/${python.sitePackages}:$PYTHONPATH"
 
     pushd dist
-    ${bootstrapped-pip}/bin/pip install *.whl --no-index --prefix=$out --no-cache
+    ${bootstrapped-pip}/bin/pip install *.whl --no-index --prefix=$out --no-cache ${toString installFlags}
     popd
 
     runHook postInstall
   '';
 
-  # We run all tests after software has been installed since that is
-  # a common idiom in Python
-  doInstallCheck = doInstallCheck;
-
-  installCheckPhase = attrs.checkPhase or ''
-    runHook preCheck
-    ${python.interpreter} nix_run_setup.py test
-    runHook postCheck
-  '';
-
   postFixup = attrs.postFixup or ''
     wrapPythonPrograms
 
-    # check if we have two packagegs with the same name in closure and fail
+    # check if we have two packages with the same name in closure and fail
     # this shouldn't happen, something went wrong with dependencies specs
     ${python.interpreter} ${./catch_conflicts.py}
   '';
@@ -134,8 +164,8 @@ python.stdenv.mkDerivation (builtins.removeAttrs attrs ["disabled" "doCheck"] //
     platforms = python.meta.platforms;
   } // meta // {
     # add extra maintainer(s) to every package
-    maintainers = (meta.maintainers or []) ++ [ chaoflow iElectric ];
-    # a marker for release utilies to discover python packages
+    maintainers = (meta.maintainers or []) ++ [ chaoflow domenkozar ];
+    # a marker for release utilities to discover python packages
     isBuildPythonPackage = python.meta.platforms;
   };
-})
+} // formatspecific)

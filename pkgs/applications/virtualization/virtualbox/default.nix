@@ -18,7 +18,7 @@ let
   # revision/hash as well. See
   # http://download.virtualbox.org/virtualbox/${version}/SHA256SUMS
   # for hashes.
-  version = "5.0.12";
+  version = "5.0.20";
 
   forEachModule = action: ''
     for mod in \
@@ -33,18 +33,18 @@ let
           "$mod/Module.symvers"
       fi
       INSTALL_MOD_PATH="$out" INSTALL_MOD_DIR=misc \
-      make -C "$MODULES_BUILD_DIR" DEPMOD=/do_not_use_depmod \
+      make -j $NIX_BUILD_CORES -C "$MODULES_BUILD_DIR" DEPMOD=/do_not_use_depmod \
         "M=\$(PWD)/$mod" BUILD_TYPE="${buildType}" ${action}
     done
   '';
 
   # See https://github.com/NixOS/nixpkgs/issues/672 for details
-  extpackRevision = "104815";
+  extpackRevision = "106931";
   extensionPack = requireFile rec {
     name = "Oracle_VM_VirtualBox_Extension_Pack-${version}-${extpackRevision}.vbox-extpack";
     # IMPORTANT: Hash must be base16 encoded because it's used as an input to
     # VBoxExtPackHelperApp!
-    sha256 = "ac1bc8452b7fdf183325272149e9f18b9810cc07adf18e48755385a9cd1b236d";
+    sha256 = "11f40842a56ebb17da1bbc82a21543e66108a5330ebd54ded68038a990aa071b";
     message = ''
       In order to use the extension pack, you need to comply with the VirtualBox Personal Use
       and Evaluation License (PUEL) by downloading the related binaries from:
@@ -63,7 +63,7 @@ in stdenv.mkDerivation {
 
   src = fetchurl {
     url = "http://download.virtualbox.org/virtualbox/${version}/VirtualBox-${version}.tar.bz2";
-    sha256 = "de0362b1d404d1ca0298db1984acb6f0f1c6210313aeb744fea345ad9201e86e";
+    sha256 = "0asc5n9an2dzvrd4isjz3vac2h0sm6dbzvrc36hn8ag2ma3hg75g";
   };
 
   buildInputs =
@@ -81,14 +81,14 @@ in stdenv.mkDerivation {
         -e 's@MKISOFS --version@MKISOFS -version@' \
         -e 's@PYTHONDIR=.*@PYTHONDIR=${if pythonBindings then python else ""}@' \
         -i configure
-    ls kBuild/bin/linux.x86/k* tools/linux.x86/bin/* | xargs -n 1 patchelf --set-interpreter ${stdenv.glibc}/lib/ld-linux.so.2
-    ls kBuild/bin/linux.amd64/k* tools/linux.amd64/bin/* | xargs -n 1 patchelf --set-interpreter ${stdenv.glibc}/lib/ld-linux-x86-64.so.2
+    ls kBuild/bin/linux.x86/k* tools/linux.x86/bin/* | xargs -n 1 patchelf --set-interpreter ${stdenv.glibc.out}/lib/ld-linux.so.2
+    ls kBuild/bin/linux.amd64/k* tools/linux.amd64/bin/* | xargs -n 1 patchelf --set-interpreter ${stdenv.glibc.out}/lib/ld-linux-x86-64.so.2
     find . -type f -iname '*makefile*' -exec sed -i -e 's/depmod -a/:/g' {} +
     sed -i -e '
-      s@"libdbus-1\.so\.3"@"${dbus}/lib/libdbus-1.so.3"@g
-      s@"libasound\.so\.2"@"${alsaLib}/lib/libasound.so.2"@g
+      s@"libdbus-1\.so\.3"@"${dbus.lib}/lib/libdbus-1.so.3"@g
+      s@"libasound\.so\.2"@"${alsaLib.out}/lib/libasound.so.2"@g
       ${optionalString pulseSupport ''
-      s@"libpulse\.so\.0"@"${libpulseaudio}/lib/libpulse.so.0"@g
+      s@"libpulse\.so\.0"@"${libpulseaudio.out}/lib/libpulse.so.0"@g
       ''}
     ' src/VBox/Main/xml/Settings.cpp \
       src/VBox/Devices/Audio/{alsa,pulse}_stubs.c \
@@ -133,7 +133,7 @@ in stdenv.mkDerivation {
       ${optionalString (!pulseSupport) "--disable-pulse"} \
       ${optionalString (!enableHardening) "--disable-hardening"} \
       --disable-kmods --with-mkisofs=${xorriso}/bin/xorrisofs
-    sed -e 's@PKG_CONFIG_PATH=.*@PKG_CONFIG_PATH=${libIDL}/lib/pkgconfig:${glib}/lib/pkgconfig ${libIDL}/bin/libIDL-config-2@' \
+    sed -e 's@PKG_CONFIG_PATH=.*@PKG_CONFIG_PATH=${libIDL}/lib/pkgconfig:${glib.dev}/lib/pkgconfig ${libIDL}/bin/libIDL-config-2@' \
         -i AutoConfig.kmk
     sed -e 's@arch/x86/@@' \
         -i Config.kmk
@@ -144,7 +144,7 @@ in stdenv.mkDerivation {
 
   buildPhase = ''
     source env.sh
-    kmk BUILD_TYPE="${buildType}"
+    kmk -j $NIX_BUILD_CORES BUILD_TYPE="${buildType}"
     ${forEachModule "modules"}
   '';
 
@@ -194,6 +194,9 @@ in stdenv.mkDerivation {
   '';
 
   passthru = { inherit version; /* for guest additions */ };
+
+  # Workaround for https://github.com/NixOS/patchelf/issues/93 (can be removed once this issue is addressed)
+  dontPatchELF = true;
 
   meta = {
     description = "PC emulator";

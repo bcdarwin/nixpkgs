@@ -9,7 +9,7 @@
    $ nix-build pkgs/top-level/release.nix -A coreutils.x86_64-linux
 */
 
-{ nixpkgs ? { outPath = (import ./all-packages.nix {}).lib.cleanSource ../..; revCount = 1234; shortRev = "abcdef"; }
+{ nixpkgs ? { outPath = (import ./../.. {}).lib.cleanSource ../..; revCount = 1234; shortRev = "abcdef"; }
 , officialRelease ? false
 , # The platforms for which we build Nixpkgs.
   supportedSystems ? [ "x86_64-linux" "i686-linux" "x86_64-darwin" ]
@@ -25,6 +25,8 @@ let
   jobs =
     { tarball = import ./make-tarball.nix { inherit pkgs nixpkgs officialRelease; };
 
+      metrics = import ./metrics.nix { inherit pkgs nixpkgs; };
+
       manual = import ../../doc;
       lib-tests = import ../../lib/tests/release.nix { inherit nixpkgs; };
 
@@ -33,6 +35,7 @@ let
           meta.description = "Release-critical builds for the Nixpkgs unstable channel";
           constituents =
             [ jobs.tarball
+              jobs.metrics
               jobs.manual
               jobs.lib-tests
               jobs.stdenv.x86_64-linux
@@ -46,6 +49,10 @@ let
               jobs.python3.x86_64-linux
               jobs.python3.i686-linux
               jobs.python3.x86_64-darwin
+              # Needed by travis-ci to test PRs
+              jobs.nox.i686-linux
+              jobs.nox.x86_64-linux
+              jobs.nox.x86_64-darwin
               # Ensure that X11/GTK+ are in order.
               jobs.thunderbird.x86_64-linux
               jobs.thunderbird.i686-linux
@@ -93,7 +100,6 @@ let
       ddrescue = linux;
       dhcp = linux;
       dico = linux;
-      dietlibc = linux;
       diffutils = all;
       disnix = all;
       disnixos = linux;
@@ -117,7 +123,6 @@ let
       gajim = linux;
       gawk = all;
       gcc = linux;
-      gcc44 = linux;
       gcj = linux;
       ghostscript = linux;
       ghostscriptX = linux;
@@ -165,7 +170,6 @@ let
       mupen64plus = linux;
       mutt = linux;
       nano = allBut cygwin;
-      ncat = linux;
       netcat = all;
       nss_ldap = linux;
       nssmdns = linux;
@@ -182,6 +186,7 @@ let
       pythonFull = linux;
       sbcl = linux;
       qt3 = linux;
+      qt4_clang = ["i686-linux"];
       quake3demo = linux;
       reiserfsprogs = linux;
       rubber = allBut cygwin;
@@ -210,7 +215,7 @@ let
       vice = linux;
       vimHugeX = linux;
       vncrec = linux;
-      vorbisTools = linux;
+      vorbis-tools = linux;
       vsftpd = linux;
       w3m = all;
       weechat = linux;
@@ -233,7 +238,7 @@ let
       zsh = linux;
       zsnes = ["i686-linux"];
 
-      emacs24PackagesNg = packagePlatforms pkgs.emacs24PackagesNg;
+      #emacs24PackagesNg = packagePlatforms pkgs.emacs24PackagesNg;
 
       gnome = {
         gnome_panel = linux;
@@ -244,7 +249,7 @@ let
       haskell.compiler = packagePlatforms pkgs.haskell.compiler;
       haskellPackages = packagePlatforms pkgs.haskellPackages;
 
-      rPackages = packagePlatforms pkgs.rPackages;
+      #rPackages = packagePlatforms pkgs.rPackages;
 
       strategoPackages = {
         sdf = linux;
@@ -254,8 +259,21 @@ let
         dryad = linux;
       };
 
+      ocamlPackages = { };
+
+      perlPackages = { };
+
       pythonPackages = {
-        zfec = linux;
+        pandas = unix;
+        scikitlearn = unix;
+      };
+      python2Packages = { };
+      python27Packages = { };
+      python3Packages = { };
+      python35Packages = {
+        blaze = unix;
+        pandas = unix;
+        scikitlearn = unix;
       };
 
       xorg = {
@@ -284,7 +302,6 @@ let
         xf86videonv = linux;
         xf86videovesa = linux;
         xf86videovmware = linux;
-        xf86videomodesetting = linux;
         xfs = linux ++ darwin;
         xinput = linux ++ darwin;
         xkbcomp = linux ++ darwin;
@@ -316,9 +333,6 @@ let
       };
 
       linuxPackages_testing = { };
-      linuxPackages_grsec_stable_desktop = { };
-      linuxPackages_grsec_stable_server = { };
-      linuxPackages_grsec_stable_server_xen = { };
       linuxPackages_grsec_testing_desktop = { };
       linuxPackages_grsec_testing_server = { };
       linuxPackages_grsec_testing_server_xen = { };

@@ -167,6 +167,15 @@ in {
     };
   };
 
+  ro = buildDict {
+    shortName = "ro-3.3-2";
+    fullName = "Romanian";
+    src = fetchurl {
+      url = mirror://gnu/aspell/dict/ro/aspell5-ro-3.3-2.tar.bz2;
+      sha256 = "0gb8j9iy1acdl11jq76idgc2lbc1rq3w04favn8cyh55d1v8phsk";
+    };
+  };
+
   ru = buildDict {
     shortName = "ru-0.99f7-1";
     fullName = "Russian";
@@ -194,5 +203,13 @@ in {
     };
   };
 
+  uk = buildDict {
+    shortName = "uk-1.4.0-0";
+    fullName = "Ukrainian";
+    src = fetchurl {
+      url = mirror://gnu/aspell/dict/uk/aspell6-uk-1.4.0-0.tar.bz2;
+      sha256 = "137i4njvnslab6l4s291s11xijr5jsy75lbdph32f9y183lagy9m";
+    };
+  };
 
 }

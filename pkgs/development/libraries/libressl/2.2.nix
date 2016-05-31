@@ -2,14 +2,16 @@
 
 stdenv.mkDerivation rec {
   name = "libressl-${version}";
-  version = "2.2.5";
+  version = "2.2.7";
 
   src = fetchurl {
     url    = "mirror://openbsd/LibreSSL/${name}.tar.gz";
-    sha256 = "0jwidi7fafcdh5qml72dx0ad0kfsk94qxzm29i7wd3cx8v8dxjp3";
+    sha256 = "1kckv36dgvvjq1ap6ahxgma4hw57zp61xsp5vjvyza5vhfrnhb3y";
   };
 
   enableParallelBuilding = true;
+
+  outputs = [ "dev" "out" "man" "bin" ];
 
   meta = with stdenv.lib; {
     description = "Free TLS/SSL implementation";

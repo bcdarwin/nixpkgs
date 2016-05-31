@@ -13,9 +13,10 @@ let
 
   # Map video driver names to driver packages. FIXME: move into card-specific modules.
   knownVideoDrivers = {
-    virtualbox   = { modules = [ kernelPackages.virtualboxGuestAdditions ]; driverName = "vboxvideo"; };
-    ati = { modules = [ pkgs.xorg.xf86videoati pkgs.xorg.glamoregl ]; };
-    intel-testing = { modules = with pkgs.xorg; [ xf86videointel-testing glamoregl ]; driverName = "intel"; };
+    virtualbox = { modules = [ kernelPackages.virtualboxGuestAdditions ]; driverName = "vboxvideo"; };
+    ati = { modules = with pkgs.xorg; [ xf86videoati glamoregl ]; };
+    intel = { modules = with pkgs.xorg; [ xf86videointel glamoregl ]; };
+    modesetting = { modules = []; };
   };
 
   fontsForXServer =
@@ -156,13 +157,16 @@ in
       inputClassSections = mkOption {
         type = types.listOf types.lines;
         default = [];
-        example = [ ''
-           Identifier      "Trackpoint Wheel Emulation"
-           MatchProduct    "ThinkPad USB Keyboard with TrackPoint"
-           Option          "EmulateWheel"          "true
-           Option          "EmulateWheelButton"    "2"
-           Option          "Emulate3Buttons"       "false"
-          '' ];
+        example = literalExample ''
+          [ '''
+              Identifier      "Trackpoint Wheel Emulation"
+              MatchProduct    "ThinkPad USB Keyboard with TrackPoint"
+              Option          "EmulateWheel"          "true"
+              Option          "EmulateWheelButton"    "2"
+              Option          "Emulate3Buttons"       "false"
+            '''
+          ]
+        '';
         description = "Content of additional InputClass sections of the X server configuration file.";
       };
 
@@ -216,24 +220,10 @@ in
         '';
       };
 
-      vaapiDrivers = mkOption {
-        type = types.listOf types.path;
-        default = [ ];
-        example = literalExample "[ pkgs.vaapiIntel pkgs.vaapiVdpau ]";
-        description = ''
-          Packages providing libva acceleration drivers.
-        '';
-      };
-
-      startGnuPGAgent = mkOption {
-        type = types.bool;
-        default = false;
-        description = ''
-          Whether to start the GnuPG agent when you log in.  The GnuPG agent
-          remembers private keys for you so that you don't have to type in
-          passphrases every time you make an SSH connection or sign/encrypt
-          data.  Use <command>ssh-add</command> to add a key to the agent.
-        '';
+      dpi = mkOption {
+        type = types.nullOr types.int;
+        default = null;
+        description = "DPI resolution to use for X server.";
       };
 
       startDbusSession = mkOption {
@@ -241,6 +231,15 @@ in
         default = true;
         description = ''
           Whether to start a new DBus session when you log in with dbus-launch.
+        '';
+      };
+
+      updateDbusEnvironment = mkOption {
+        type = types.bool;
+        default = false;
+        description = ''
+          Whether to update the DBus activation environment after launching the
+          desktop manager.
         '';
       };
 
@@ -450,14 +449,7 @@ in
       in optional (driver != null) ({ inherit name; driverName = name; } // driver));
 
     assertions =
-      [ { assertion = !(config.programs.ssh.startAgent && cfg.startGnuPGAgent);
-          message =
-            ''
-              The OpenSSH agent and GnuPG agent cannot be started both. Please
-              choose between ‘programs.ssh.startAgent’ and ‘services.xserver.startGnuPGAgent’.
-            '';
-        }
-        { assertion = config.security.polkit.enable;
+      [ { assertion = config.security.polkit.enable;
           message = "X11 requires Polkit to be enabled (‘security.polkit.enable = true’).";
         }
       ];
@@ -474,7 +466,7 @@ in
         ]);
 
     environment.systemPackages =
-      [ xorg.xorgserver
+      [ xorg.xorgserver.out
         xorg.xrandr
         xorg.xrdb
         xorg.setxkbmap
@@ -484,6 +476,7 @@ in
         xorg.xsetroot
         xorg.xinput
         xorg.xprop
+        xorg.xauth
         pkgs.xterm
         pkgs.xdg_utils
       ]
@@ -511,7 +504,7 @@ in
             XKB_BINDIR = "${xorg.xkbcomp}/bin"; # Needed for the Xkb extension.
             XORG_DRI_DRIVER_PATH = "/run/opengl-driver/lib/dri"; # !!! Depends on the driver selected at runtime.
             LD_LIBRARY_PATH = concatStringsSep ":" (
-              [ "${xorg.libX11}/lib" "${xorg.libXext}/lib" ]
+              [ "${xorg.libX11.out}/lib" "${xorg.libXext.out}/lib" ]
               ++ concatLists (catAttrs "libPath" cfg.drivers));
           } // cfg.displayManager.job.environment;
 
@@ -527,22 +520,24 @@ in
         serviceConfig = {
           Restart = "always";
           RestartSec = "200ms";
+          SyslogIdentifier = "display-manager";
         };
       };
 
     services.xserver.displayManager.xserverArgs =
-      [ "-ac"
-        "-terminate"
+      [ "-terminate"
         "-config ${configFile}"
         "-xkbdir" "${cfg.xkbDir}"
+        # Log at the default verbosity level to stderr rather than /var/log/X.*.log.
+        "-verbose" "3" "-logfile" "/dev/null"
       ] ++ optional (cfg.display != null) ":${toString cfg.display}"
         ++ optional (cfg.tty     != null) "vt${toString cfg.tty}"
-        ++ optionals (cfg.display != null) [ "-logfile" "/var/log/X.${toString cfg.display}.log" ]
+        ++ optional (cfg.dpi     != null) "-dpi ${toString cfg.dpi}"
         ++ optional (!cfg.enableTCP) "-nolisten tcp";
 
     services.xserver.modules =
       concatLists (catAttrs "modules" cfg.drivers) ++
-      [ xorg.xorgserver
+      [ xorg.xorgserver.out
         xorg.xf86inputevdev
       ];
 

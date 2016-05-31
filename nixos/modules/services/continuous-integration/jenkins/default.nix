@@ -92,11 +92,12 @@ in {
         type = with types; attrsOf str;
         description = ''
           Additional environment variables to be passed to the jenkins process.
-          As a base environment, jenkins receives NIX_PATH, SSL_CERT_FILE and
-          GIT_SSL_CAINFO from <option>environment.sessionVariables</option>,
-          NIX_REMOTE is set to "daemon" and JENKINS_HOME is set to
-          the value of <option>services.jenkins.home</option>. This option has
-          precedence and can be used to override those mentioned variables.
+          As a base environment, jenkins receives NIX_PATH from
+          <option>environment.sessionVariables</option>, NIX_REMOTE is set to
+          "daemon" and JENKINS_HOME is set to the value of
+          <option>services.jenkins.home</option>.
+          This option has precedence and can be used to override those
+          mentioned variables.
         '';
       };
 
@@ -136,11 +137,7 @@ in {
       environment =
         let
           selectedSessionVars =
-            lib.filterAttrs (n: v: builtins.elem n
-                [ "NIX_PATH"
-                  "SSL_CERT_FILE"
-                  "GIT_SSL_CAINFO"
-                ])
+            lib.filterAttrs (n: v: builtins.elem n [ "NIX_PATH" ])
               config.environment.sessionVariables;
         in
           selectedSessionVars //
@@ -164,16 +161,8 @@ in {
       '';
 
       postStart = ''
-        until ${pkgs.curl}/bin/curl -s -L ${cfg.listenAddress}:${toString cfg.port}${cfg.prefix} ; do
-          sleep 10
-        done
-        while true ; do
-          index=`${pkgs.curl}/bin/curl -s -L ${cfg.listenAddress}:${toString cfg.port}${cfg.prefix}`
-          if [[ !("$index" =~ 'Please wait while Jenkins is restarting' ||
-                  "$index" =~ 'Please wait while Jenkins is getting ready to work') ]]; then
-            exit 0
-          fi
-          sleep 30
+        until [[ $(${pkgs.curl.bin}/bin/curl -s --head -w '\n%{http_code}' http://${cfg.listenAddress}:${toString cfg.port}${cfg.prefix} | tail -n1) =~ ^(200|403)$ ]]; do
+          sleep 1
         done
       '';
 

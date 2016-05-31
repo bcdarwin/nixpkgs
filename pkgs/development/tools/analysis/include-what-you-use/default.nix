@@ -1,12 +1,12 @@
 { stdenv, fetchurl, cmake, llvmPackages }:
 
-# Also bump llvmPackages in all-packages.nix to the supported version!
-let version = "0.5"; in
 stdenv.mkDerivation rec {
   name = "include-what-you-use-${version}";
+  # Also bump llvmPackages in all-packages.nix to the supported version!
+  version = "0.6";
 
   src = fetchurl {
-    sha256 = "19pwhgwvfr86n8ks099p9r02v7zh8d3qs7g7snzkhpdgq1azww85";
+    sha256 = "0n3z4pfbby0rl338irbs4yvcmjfnza82xg9a8r9amyl0bkfasbxb";
     url = "${meta.homepage}/downloads/${name}.src.tar.gz";
   };
 
@@ -18,7 +18,6 @@ stdenv.mkDerivation rec {
   enableParallelBuilding = true;
 
   meta = with stdenv.lib; {
-    inherit version;
     description = "Analyze #includes in C/C++ source files with clang";
     longDescription = ''
       For every symbol (type, function variable, or macro) that you use in

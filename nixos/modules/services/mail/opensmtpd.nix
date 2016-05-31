@@ -9,6 +9,11 @@ let
   conf = writeText "smtpd.conf" cfg.serverConfiguration;
   args = concatStringsSep " " cfg.extraServerArgs;
 
+  sendmail = pkgs.runCommand "opensmtpd-sendmail" {} ''
+    mkdir -p $out/bin
+    ln -s ${opensmtpd}/sbin/smtpctl $out/bin/sendmail
+  '';
+
 in {
 
   ###### interface
@@ -21,6 +26,15 @@ in {
         type = types.bool;
         default = false;
         description = "Whether to enable the OpenSMTPD server.";
+      };
+
+      addSendmailToSystemPath = mkOption {
+        type = types.bool;
+        default = true;
+        description = ''
+          Whether to add OpenSMTPD's sendmail binary to the
+          system path or not.
+        '';
       };
 
       extraServerArgs = mkOption {
@@ -64,7 +78,7 @@ in {
 
   ###### implementation
 
-  config = mkIf config.services.opensmtpd.enable {
+  config = mkIf cfg.enable {
     users.extraGroups = {
       smtpd.gid = config.ids.gids.smtpd;
       smtpq.gid = config.ids.gids.smtpq;
@@ -93,14 +107,20 @@ in {
       wantedBy = [ "multi-user.target" ];
       wants = [ "network.target" ];
       after = [ "network.target" ];
-      preStart = "mkdir -p /var/spool";
+      preStart = ''
+        mkdir -p /var/spool/smtpd
+
+        mkdir -p /var/spool/smtpd/offline
+        chown root.smtpq /var/spool/smtpd/offline
+        chmod 770 /var/spool/smtpd/offline
+
+        mkdir -p /var/spool/smtpd/purge
+        chmod 700 /var/spool/smtpd/purge
+      '';
       serviceConfig.ExecStart = "${opensmtpd}/sbin/smtpd -d -f ${conf} ${args}";
       environment.OPENSMTPD_PROC_PATH = "${procEnv}/libexec/opensmtpd";
     };
 
-    environment.systemPackages = [ (pkgs.runCommand "opensmtpd-sendmail" {} ''
-      mkdir -p $out/bin
-      ln -s ${opensmtpd}/sbin/smtpctl $out/bin/sendmail
-    '') ];
+    environment.systemPackages = mkIf cfg.addSendmailToSystemPath [ sendmail ];
   };
 }

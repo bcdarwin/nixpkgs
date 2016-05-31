@@ -6,7 +6,7 @@
 {stdenv, fetchurl, writeText, pkgconfig, ocaml, findlib, camlp5, ncurses, lablgtk ? null, csdp ? null}:
 
 let
-  version = "8.5rc1";
+  version = "8.5pl1";
   coq-version = "8.5";
   buildIde = lablgtk != null;
   ideFlags = if buildIde then "-lablgtkdir ${lablgtk}/lib/ocaml/*/site-lib/lablgtk2 -coqide opt" else "";
@@ -23,8 +23,8 @@ stdenv.mkDerivation {
   inherit ocaml camlp5;
 
   src = fetchurl {
-    url = https://coq.inria.fr/distrib/V8.5rc1/files/coq-8.5rc1.tar.gz;
-    sha256 = "0n8mb7di9iwg8dgy1xmivf2ajx8kqkrj9mafc32vicn2lbg16q2r";
+    url = "http://coq.inria.fr/distrib/V${version}/files/coq-${version}.tar.gz";
+    sha256 = "1w2xvm6w16khfn63bp95s25hnkn2ny3w0yqg3lq63gp11aqpbyjb";
   };
 
   buildInputs = [ pkgconfig ocaml findlib camlp5 ncurses lablgtk ];

@@ -1,22 +1,32 @@
-{ stdenv, fetchFromGitHub, cmake, bison, flex, openssl, pcre, libmilter, opendkim }:
+{ stdenv, fetchFromGitHub, cmake, bison, flex, openssl, pcre, libmilter, opendkim,
+ libmemcached }:
+
+let patchedLibmilter = stdenv.lib.overrideDerivation  libmilter (_ : {
+    patches = libmilter.patches ++ [ ./fd-passing-libmilter.patch ];
+});
+in
 
 stdenv.mkDerivation rec {
   name = "rmilter-${version}";
-  version = "1.6.7";
+  version = "1.8.4";
+
   src = fetchFromGitHub {
     owner = "vstakhov";
     repo = "rmilter";
     rev = version;
-    sha256 = "1syviydlv4m1isl0r52sk4s0a75fyk788j1z3yvfzzf1hga333gn";
+    sha256 = "0d2hv39sbzsv3bkbx433vpdqgcjv71v2kkaz4k065xppi35wa2js";
   };
 
   nativeBuildInputs = [ bison cmake flex ];
-  buildInputs = [ libmilter openssl pcre opendkim];
+  buildInputs = [ libmemcached patchedLibmilter openssl pcre opendkim];
 
   meta = with stdenv.lib; {
     homepage = "https://github.com/vstakhov/rmilter";
-    license = licenses.bsd2; 
-    description = "server, used to integrate rspamd and milter compatible MTA, for example postfix or sendmail";
-    maintainer = maintainers.avnik;
+    license = licenses.asl20;
+    description = ''
+      Daemon to integrate rspamd and milter compatible MTA, for example
+      postfix or sendmail
+    '';
+    maintainers = with maintainers; [ avnik fpletz ];
   };
 }

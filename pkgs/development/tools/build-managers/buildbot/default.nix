@@ -1,5 +1,5 @@
-{ stdenv, buildPythonPackage, fetchurl, twisted, dateutil, jinja2
-, sqlalchemy , sqlalchemy_migrate_0_7
+{ stdenv, buildPythonApplication, fetchurl, twisted, dateutil, jinja2
+, sqlalchemy_migrate_0_7
 , enableDebugClient ? false, pygobject ? null, pyGtkGlade ? null
 }:
 
@@ -8,12 +8,12 @@
 
 assert enableDebugClient -> pygobject != null && pyGtkGlade != null;
 
-buildPythonPackage (rec {
+buildPythonApplication (rec {
   name = "buildbot-0.8.12";
   namePrefix = "";
 
   src = fetchurl {
-    url = "https://pypi.python.org/packages/source/b/buildbot/${name}.tar.gz";
+    url = "mirror://pypi/b/buildbot/${name}.tar.gz";
     sha256 = "1mn4h04sp6smr3ahqfflys15cpn13q9mfkapcs2jc4ppvxv6kdn6";
   };
 

@@ -1,12 +1,13 @@
-{ stdenv, fetchurl, buildPythonPackage, python27Packages }:
+{ stdenv, fetchurl, buildPythonApplication, python27Packages }:
 
-buildPythonPackage rec {
+buildPythonApplication rec {
     namePrefix = "";
-    name = "mcomix-1.01";
+    name = "mcomix-${version}";
+    version = "1.2.1";
 
     src = fetchurl {
       url = "mirror://sourceforge/mcomix/${name}.tar.bz2";
-      sha256 = "0k3pqbvk08kb1nr0qldaj9bc7ca6rvcycgfi2n7gqmsirq5kscys";
+      sha256 = "0fzsf9pklhfs1rzwzj64c0v30b74nk94p93h371rpg45qnfiahvy";
     };
 
     propagatedBuildInputs = with python27Packages; [ pygtk pillow sqlite3 ];

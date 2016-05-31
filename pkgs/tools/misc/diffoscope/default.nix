@@ -1,27 +1,24 @@
 { lib, stdenv, fetchgit, fetchpatch, pythonPackages, docutils
-, acl, binutils, bzip2, cbfstool, cdrkit, cpio, diffutils, e2fsprogs, file, fpc, gettext, ghc, gnupg1
-, gzip, jdk, libcaca, mono, pdftk, poppler_utils, rpm, sng, sqlite, squashfsTools, unzip, vim, xz
+, acl, binutils, bzip2, cbfstool, cdrkit, colord, cpio, diffutils, e2fsprogs, file, fpc, gettext, ghc
+, gnupg1, gzip, jdk, libcaca, mono, pdftk, poppler_utils, rpm, sng, sqlite, squashfsTools, unzip, vim, xz
 , enableBloat ? false
 }:
 
-pythonPackages.buildPythonPackage rec {
+pythonPackages.buildPythonApplication rec {
   name = "diffoscope-${version}";
-  version = "45";
+  version = "52";
 
   namePrefix = "";
 
   src = fetchgit {
     url = "git://anonscm.debian.org/reproducible/diffoscope.git";
     rev = "refs/tags/${version}";
-    sha256 = "1wdphcmr2n0pyg7zwvczy7ik1bzjlrjb76jwbzk971lwba3ajazk";
+    sha256 = "1a22abvjs8f8c4anrcfhn02xw7m2gl701b9csxy06c5ymib0npxd";
   };
 
   patches =
-    [ # Ignore different link counts and inode change times.
-      (fetchpatch {
-        url = https://github.com/edolstra/diffoscope/commit/367f77bba8df0dbc89e63c9f66f05736adf5ec59.patch;
-        sha256 = "0mnp7icdrjn02dr6f5dwqvvr848jzgkv3cg69a24234y9gxd30ww";
-      })
+    [ # Ignore different link counts.
+      ./ignore_links.patch
     ];
 
   postPatch = ''
@@ -29,13 +26,13 @@ pythonPackages.buildPythonPackage rec {
     sed -i setup.py -e "/'rpm-python',/d"
   '';
 
-  # Still missing these tools: enjarify otool(maybe OS X only) showttf
+  # Still missing these tools: enjarify, otool & lipo (maybe OS X only), showttf
   # Also these libraries: python3-guestfs
   # FIXME: move xxd into a separate package so we don't have to pull in all of vim.
   propagatedBuildInputs = (with pythonPackages; [ debian libarchive-c python_magic tlsh ]) ++
     [ acl binutils bzip2 cbfstool cdrkit cpio diffutils e2fsprogs file gettext
       gzip libcaca poppler_utils rpm sng sqlite squashfsTools unzip vim xz
-    ] ++ lib.optionals enableBloat [ jdk ghc fpc gnupg1 pdftk mono ];
+    ] ++ lib.optionals enableBloat [ colord fpc ghc gnupg1 jdk mono pdftk ];
 
   doCheck = false; # Calls 'mknod' in squashfs tests, which needs root
 
