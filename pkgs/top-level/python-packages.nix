@@ -18681,6 +18681,46 @@ in modules // {
     };
   };
 
+  pymvpa2 = buildPythonPackage rec {
+    version = "2.5.0";
+    name = "pymvpa2-${version}";
+
+    src = pkgs.fetchurl rec {
+      #name ="pymvpa2";
+      url = "https://pypi.python.org/packages/4b/45/973ed140e9794e6ac39318b8e1f6188dba508015590b0779071481085745/${name}.tar.gz";
+      #url = "mirror://pypi/p/${name}/${name}-${version}.tar.gz";
+      sha256 = "1gmm075y11ybz4zjjxgnk78gz29a8q3m2n79w1iivdhd078fvj7y";
+    };
+
+    # TODO python setup.py build_ext, not setup.py ??
+
+    #preBuild = "${python}/bin/${python.executable} setup.py build_ext";
+
+    # the test suite is being reworked and uses several optional packages, but individual tests seem hard to disable
+    doCheck = false;
+
+    # FIXME this doesn't get the scripts, data. ...
+    postBuild = if isPy3k then "mv build/py3k/dist ." else null;
+
+    buildInputs = [ pkgs.swig ];
+
+    propagatedBuildInputs = with self; [
+      matplotlib
+      nibabel
+      numpy
+      scikitlearn
+      scipy
+    ];
+    # other optional deps: FSL, AFNI, Shogun, rpy2, h5py, reportlab, statsmodels, ...
+
+    meta = {
+      description = "Package for multivariate statistical analysis on large datasets";
+      homepage = http://www.pymvpa.org;
+      license = licenses.mit;
+      maintainers = with maintainers; [ bcdarwin ];
+    };
+  };
+
   pyPdf = buildPythonPackage rec {
     name = "pyPdf-1.13";
 
