@@ -18681,6 +18681,48 @@ in modules // {
     };
   };
 
+  pymvpa2 = buildPythonPackage rec {
+    version = "2.5.0";
+    name = "pymvpa2-${version}";
+
+    src = pkgs.fetchurl rec {
+      url = "https://pypi.python.org/packages/4b/45/973ed140e9794e6ac39318b8e1f6188dba508015590b0779071481085745/${name}.tar.gz";
+      sha256 = "1gmm075y11ybz4zjjxgnk78gz29a8q3m2n79w1iivdhd078fvj7y";
+    };
+
+    preBuild = if isPy3k then ''
+      mkdir -p build/py3k
+      2to3 -w bin/*
+      mv bin build/py3k
+    '' else null;
+
+    # the test suite is being reworked and uses several optional packages, but individual tests seem hard to disable
+    doCheck = false;
+
+    # FIXME this doesn't get the scripts, data. ...
+    postBuild = if isPy3k then ''
+      mv build/py3k/dist .
+    '' else null;
+
+    buildInputs = [ pkgs.swig ];
+
+    propagatedBuildInputs = with self; [
+      matplotlib
+      nibabel
+      numpy
+      scikitlearn
+      scipy
+    ];
+    # other optional deps: FSL, AFNI, Shogun, rpy2, h5py, reportlab, statsmodels, ...
+
+    meta = {
+      description = "Package for multivariate statistical analysis on large datasets";
+      homepage = http://www.pymvpa.org;
+      license = licenses.mit;
+      maintainers = with maintainers; [ bcdarwin ];
+    };
+  };
+
   pyPdf = buildPythonPackage rec {
     name = "pyPdf-1.13";
 
@@ -20113,8 +20155,9 @@ in modules // {
       url = "mirror://pypi/r/rpy2/${name}.tar.gz";
       sha256 = "d0d584c435b5ed376925a95a4525dbe87de7fa9260117e9f208029e0c919ad06";
     };
-    buildInputs = with pkgs; [ readline R pcre lzma bzip2 zlib icu ];
-    propagatedBuildInputs = [ self.singledispatch ];
+    buildInputs = with pkgs; [ R pcre lzma bzip2 zlib icu ];
+    propagatedBuildInputs = [ pkgs.readline self.singledispatch ];
+    doCheck = false;
     meta = {
       homepage = http://rpy.sourceforge.net/rpy2;
       description = "Python interface to R";
