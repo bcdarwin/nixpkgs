@@ -473,6 +473,8 @@ in
 
   djmount = callPackage ../tools/filesystems/djmount { };
 
+  elvish = callPackage ../shells/elvish { };
+
   grc = callPackage ../tools/misc/grc { };
 
   green-pdfviewer = callPackage ../applications/misc/green-pdfviewer {
@@ -573,20 +575,6 @@ in
   bindfs = callPackage ../tools/filesystems/bindfs { };
 
   bins = callPackage ../tools/graphics/bins { };
-
-  binwalk = callPackage ../tools/misc/binwalk {
-    python = pythonFull;
-    wrapPython = pythonPackages.wrapPython;
-    curses = pythonPackages.curses;
-  };
-
-  binwalk-full = callPackage ../tools/misc/binwalk {
-    python = pythonFull;
-    wrapPython = pythonPackages.wrapPython;
-    curses = pythonPackages.curses;
-    visualizationSupport = true;
-    pyqtgraph = pythonPackages.pyqtgraph;
-  };
 
   bitbucket-cli = pythonPackages.bitbucket-cli;
 
@@ -1918,6 +1906,8 @@ in
 
   haveged = callPackage ../tools/security/haveged { };
 
+  habitat = callPackage ../applications/networking/cluster/habitat { };
+
   hardlink = callPackage ../tools/system/hardlink { };
 
   hashcat = callPackage ../tools/security/hashcat { };
@@ -2435,6 +2425,16 @@ in
   mbox = callPackage ../tools/security/mbox { };
 
   mbuffer = callPackage ../tools/misc/mbuffer { };
+
+  mecab =
+    let
+      mecab-nodic = callPackage ../tools/text/mecab/nodic.nix { };
+    in
+    callPackage ../tools/text/mecab {
+      mecab-ipadic = callPackage ../tools/text/mecab/ipadic.nix {
+        inherit mecab-nodic;
+      };
+    };
 
   memtest86 = callPackage ../tools/misc/memtest86 { };
 
@@ -4147,6 +4147,8 @@ in
   zsh = callPackage ../shells/zsh { };
 
   nix-zsh-completions = callPackage ../shells/nix-zsh-completions { };
+
+  zsh-completions = callPackage ../shells/zsh-completions { };
 
   zsh-prezto = callPackage ../shells/zsh-prezto { };
 
@@ -7090,6 +7092,8 @@ in
   gecode_4 = callPackage ../development/libraries/gecode { };
   gecode = self.gecode_4;
 
+  gephi = callPackage ../applications/science/misc/gephi { };
+
   gegl = callPackage ../development/libraries/gegl { };
 
   gegl_0_3 = callPackage ../development/libraries/gegl/3.0.nix { };
@@ -8712,6 +8716,9 @@ in
     fetchurl = fetchurlBoot;
   };
   libressl_2_3 = callPackage ../development/libraries/libressl/2.3.nix {
+    fetchurl = fetchurlBoot;
+  };
+  libressl_2_4 = callPackage ../development/libraries/libressl/2.4.nix {
     fetchurl = fetchurlBoot;
   };
 
@@ -10823,15 +10830,6 @@ in
       ];
   };
 
-  linux_4_3 = callPackage ../os-specific/linux/kernel/linux-4.3.nix {
-    kernelPatches = [ kernelPatches.bridge_stp_helper ]
-      ++ lib.optionals ((platform.kernelArch or null) == "mips")
-      [ kernelPatches.mips_fpureg_emu
-        kernelPatches.mips_fpu_sigill
-        kernelPatches.mips_ext3_n32
-      ];
-  };
-
   linux_4_4 = callPackage ../os-specific/linux/kernel/linux-4.4.nix {
     kernelPatches = [ kernelPatches.bridge_stp_helper kernelPatches.qat_common_Makefile ]
       ++ lib.optionals ((platform.kernelArch or null) == "mips")
@@ -11021,7 +11019,6 @@ in
   linuxPackages_3_14 = recurseIntoAttrs (self.linuxPackagesFor self.linux_3_14 linuxPackages_3_14);
   linuxPackages_3_18 = recurseIntoAttrs (self.linuxPackagesFor self.linux_3_18 linuxPackages_3_18);
   linuxPackages_4_1 = recurseIntoAttrs (self.linuxPackagesFor self.linux_4_1 linuxPackages_4_1);
-  linuxPackages_4_3 = recurseIntoAttrs (self.linuxPackagesFor self.linux_4_3 linuxPackages_4_3);
   linuxPackages_4_4 = recurseIntoAttrs (self.linuxPackagesFor self.linux_4_4 linuxPackages_4_4);
   linuxPackages_4_5 = recurseIntoAttrs (self.linuxPackagesFor self.linux_4_5 linuxPackages_4_5);
   linuxPackages_4_6 = recurseIntoAttrs (self.linuxPackagesFor self.linux_4_6 linuxPackages_4_6);
@@ -13026,6 +13023,8 @@ in
   gpsd = callPackage ../servers/gpsd { };
 
   gpsprune = callPackage ../applications/misc/gpsprune { };
+
+  gpxsee = qt5.callPackage ../applications/misc/gpxsee { };
 
   gtk2fontsel = callPackage ../applications/misc/gtk2fontsel {
     inherit (gnome2) gtk;
@@ -16037,7 +16036,13 @@ in
     stdenv = overrideCC stdenv gcc49;
   };
 
+  bcftools = callPackage ../applications/science/biology/bcftools { };
+
   emboss = callPackage ../applications/science/biology/emboss { };
+
+  htslib = callPackage ../development/libraries/science/biology/htslib { };
+
+  igv = callPackage ../applications/science/biology/igv { };
 
   neuron = callPackage ../applications/science/biology/neuron { };
 
@@ -16832,6 +16837,8 @@ in
   refind = callPackage ../tools/bootloaders/refind { };
 
   spectrojack = callPackage ../applications/audio/spectrojack { };
+
+  sift = callPackage ../tools/text/sift { };
 
   xlockmore = callPackage ../misc/screensavers/xlockmore { };
 
