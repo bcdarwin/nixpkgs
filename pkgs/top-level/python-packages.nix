@@ -18409,6 +18409,27 @@ in modules // {
     };
   };
 
+  pystan = buildPythonPackage rec {
+    name = "pystan-${version}";
+    version = "2.9.0.0";
+
+    src = pkgs.fetchurl {
+      url = "mirror://pypi/p/pystan/${name}.tar.gz";
+      sha256 = "0zycr6fi86ipmbwzz5y02d78bk8g3zasjw8ffvxbfpba19brmvd5";
+    };
+
+    buildInputs = [ self.cython ];
+    # TODO ensure a C++ compiler is present at runtime (what about cython??)
+    propagatedBuildInputs = with self; [ matplotlib numpy ];
+    # TODO ensure the tests are run
+
+    meta = {
+      description = "Python interface to the Stan probabilistic programming system";
+      homepage = https://github.com/stan-dev/pystan;
+      license = licenses.gpl3;
+    };
+  };
+
   PyStemmer = buildPythonPackage (rec {
     name = "PyStemmer-1.3.0";
 
