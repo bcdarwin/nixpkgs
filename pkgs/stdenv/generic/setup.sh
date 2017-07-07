@@ -199,6 +199,18 @@ isELF() {
     if [[ "$magic" =~ ELF ]]; then return 0; else return 1; fi
 }
 
+# Return success if the specified file is a script (i.e. starts with
+# "#!").
+isScript() {
+    local fn="$1"
+    local magic
+    if ! [ -x /bin/sh ]; then return 0; fi
+    exec {fd}< "$fn"
+    read -n 2 -u $fd magic
+    exec {fd}<&-
+    if [[ "$magic" =~ \#! ]]; then return 0; else return 1; fi
+}
+
 
 ######################################################################
 # Initialisation.
@@ -234,6 +246,11 @@ fi
 if [ -z "$SHELL" ]; then echo "SHELL not set"; exit 1; fi
 BASH="$SHELL"
 export CONFIG_SHELL="$SHELL"
+
+
+# Dummy implementation of the paxmark function. On Linux, this is
+# overwritten by paxctl's setup hook.
+paxmark() { true; }
 
 
 # Execute the pre-hook.
@@ -285,15 +302,26 @@ findInputs() {
     fi
 }
 
-crossPkgs=""
-for i in $buildInputs $defaultBuildInputs $propagatedBuildInputs; do
-    findInputs $i crossPkgs propagated-build-inputs
-done
+if [ -z "$crossConfig" ]; then
+    # Not cross-compiling - both buildInputs (and variants like propagatedBuildInputs)
+    # are handled identically to nativeBuildInputs
+    nativePkgs=""
+    for i in $nativeBuildInputs $buildInputs \
+             $defaultNativeBuildInputs $defaultBuildInputs \
+             $propagatedNativeBuildInputs $propagatedBuildInputs; do
+        findInputs $i nativePkgs propagated-native-build-inputs
+    done
+else
+    crossPkgs=""
+    for i in $buildInputs $defaultBuildInputs $propagatedBuildInputs; do
+        findInputs $i crossPkgs propagated-build-inputs
+    done
 
-nativePkgs=""
-for i in $nativeBuildInputs $defaultNativeBuildInputs $propagatedNativeBuildInputs; do
-    findInputs $i nativePkgs propagated-native-build-inputs
-done
+    nativePkgs=""
+    for i in $nativeBuildInputs $defaultNativeBuildInputs $propagatedNativeBuildInputs; do
+        findInputs $i nativePkgs propagated-native-build-inputs
+    done
+fi
 
 
 # Set the relevant environment variables to point to the build inputs
@@ -369,14 +397,10 @@ fi
 export NIX_BUILD_CORES
 
 
-# Dummy implementation of the paxmark function. On Linux, this is
-# overwritten by paxctl's setup hook.
-paxmark() { true; }
-
-
 # Prevent OpenSSL-based applications from using certificates in
 # /etc/ssl.
-if [ -z "$SSL_CERT_FILE" ]; then
+# Leave it in shells for convenience.
+if [ -z "$SSL_CERT_FILE" ] && [ -z "$IN_NIX_SHELL" ]; then
   export SSL_CERT_FILE=/no-cert-file.crt
 fi
 
@@ -388,6 +412,11 @@ fi
 substitute() {
     local input="$1"
     local output="$2"
+
+    if [ ! -f "$input" ]; then
+      echo "substitute(): file '$input' does not exist"
+      return 1
+    fi
 
     local -a params=("$@")
 
@@ -484,12 +513,14 @@ dumpVars() {
 }
 
 
-# Utility function: return the base name of the given path, with the
+# Utility function: echo the base name of the given path, with the
 # prefix `HASH-' removed, if present.
 stripHash() {
-    strippedName=$(basename $1);
+    local strippedName="$(basename "$1")";
     if echo "$strippedName" | grep -q '^[a-z0-9]\{32\}-'; then
-        strippedName=$(echo "$strippedName" | cut -c34-)
+        echo "$strippedName" | cut -c34-
+    else
+        echo "$strippedName"
     fi
 }
 
@@ -500,12 +531,10 @@ _defaultUnpack() {
 
     if [ -d "$fn" ]; then
 
-        stripHash "$fn"
-
         # We can't preserve hardlinks because they may have been
         # introduced by store optimization, which might break things
         # in the build.
-        cp -pr --reflink=auto "$fn" $strippedName
+        cp -pr --reflink=auto "$fn" "$(stripHash "$fn")"
 
     else
 
@@ -753,14 +782,26 @@ fixupPhase() {
 
     # Propagate build inputs and setup hook into the development output.
 
-    if [ -n "$propagatedBuildInputs" ]; then
-        mkdir -p "${!outputDev}/nix-support"
-        echo "$propagatedBuildInputs" > "${!outputDev}/nix-support/propagated-build-inputs"
-    fi
+    if [ -z "$crossConfig" ]; then
+        # Not cross-compiling - propagatedBuildInputs are handled identically to propagatedNativeBuildInputs
+        local propagated="$propagatedNativeBuildInputs"
+        if [ -n "$propagatedBuildInputs" ]; then
+            propagated+="${propagated:+ }$propagatedBuildInputs"
+        fi
+        if [ -n "$propagated" ]; then
+            mkdir -p "${!outputDev}/nix-support"
+            echo "$propagated" > "${!outputDev}/nix-support/propagated-native-build-inputs"
+        fi
+    else
+        if [ -n "$propagatedBuildInputs" ]; then
+            mkdir -p "${!outputDev}/nix-support"
+            echo "$propagatedBuildInputs" > "${!outputDev}/nix-support/propagated-build-inputs"
+        fi
 
-    if [ -n "$propagatedNativeBuildInputs" ]; then
-        mkdir -p "${!outputDev}/nix-support"
-        echo "$propagatedNativeBuildInputs" > "${!outputDev}/nix-support/propagated-native-build-inputs"
+        if [ -n "$propagatedNativeBuildInputs" ]; then
+            mkdir -p "${!outputDev}/nix-support"
+            echo "$propagatedNativeBuildInputs" > "${!outputDev}/nix-support/propagated-native-build-inputs"
+        fi
     fi
 
     if [ -n "$setupHook" ]; then
@@ -827,6 +868,10 @@ showPhaseHeader() {
 
 
 genericBuild() {
+    if [ -f "$buildCommandPath" ]; then
+        . "$buildCommandPath"
+        return
+    fi
     if [ -n "$buildCommand" ]; then
         eval "$buildCommand"
         return

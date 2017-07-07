@@ -1,19 +1,19 @@
 # This script was inspired by the ArchLinux User Repository package:
 #
 #   https://aur.archlinux.org/cgit/aur.git/tree/PKGBUILD?h=oh-my-zsh-git
-
-
 { stdenv, fetchgit }:
 
 stdenv.mkDerivation rec {
-  name = "oh-my-zsh-git-${version}";
-  version = "2016-04-20";
+  version = "2017-06-22";
+  name = "oh-my-zsh-${version}";
 
   src = fetchgit {
     url = "https://github.com/robbyrussell/oh-my-zsh";
-    rev = "1b1315a777328095cd8b5f364fd4345eeae7c4bf";
-    sha256 = "0q3w96a9rjxmqknycxjqjs5mi0q2mark8yrfim7snxrf9ajv0ypk";
+    rev = "d848c94804918138375041a9f800f401bec12068";
+    sha256 = "0mxmqkdpimwrskqjri3lp3haj1hzf583g7psnv34y3hyymzcx1h6";
   };
+
+  pathsToLink = [ "/share/oh-my-zsh" ];
 
   phases = "installPhase";
 
@@ -25,13 +25,13 @@ stdenv.mkDerivation rec {
   cp -r $src/* $outdir
   cd $outdir
 
-  rm MIT-LICENSE.txt
+  rm LICENSE.txt
   rm -rf .git*
 
   chmod -R +w templates
 
   # Change the path to oh-my-zsh dir and disable auto-updating.
-  sed -i -e "2c\\ZSH=$outdir/" \
+  sed -i -e "s#ZSH=\$HOME/.oh-my-zsh#ZSH=$outdir#" \
          -e 's/\# \(DISABLE_AUTO_UPDATE="true"\)/\1/' \
    $template
 
@@ -64,7 +64,7 @@ stdenv.mkDerivation rec {
   To copy the Oh My Zsh configuration file to your home directory, run
   the following command:
 
-    $ cp -v $(nix-env -q --out-path oh-my-zsh-git | cut -d' ' -f3)/share/oh-my-zsh/templates/zshrc.zsh-template ~/.zshrc
+    $ cp -v $(nix-env -q --out-path oh-my-zsh | cut -d' ' -f3)/share/oh-my-zsh/templates/zshrc.zsh-template ~/.zshrc
   '';
   homepage        = "http://ohmyz.sh/";
   license         = licenses.mit;

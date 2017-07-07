@@ -1,29 +1,29 @@
-{ stdenv, fetchurl, pkgconfig, dbus, glib, alsaLib, python,
-  pythonPackages, pythonDBus, readline, libsndfile, udev, libical,
+{ stdenv, fetchurl, pkgconfig, dbus, glib, alsaLib,
+  pythonPackages, readline, libsndfile, udev, libical,
   systemd, enableWiimote ? false }:
 
 assert stdenv.isLinux;
 
 stdenv.mkDerivation rec {
-  name = "bluez-5.40";
+  name = "bluez-5.43";
 
   src = fetchurl {
     url = "mirror://kernel/linux/bluetooth/${name}.tar.xz";
-    sha256 = "09ywk3lvgis0nbi0d5z8d4qp5r33lzwnd6bdakacmbsm420qpnns";
+    sha256 = "05cdnpz0w2lwq2x5ba87q1h2wgb4lfnpbnbh6p7499hx59fw1j8n";
   };
 
   pythonPath = with pythonPackages;
-    [ pythonDBus pygobject pygobject3 recursivePthLoader ];
+    [ dbus pygobject2 pygobject3 recursivePthLoader ];
 
   buildInputs =
-    [ pkgconfig dbus glib alsaLib python pythonPackages.wrapPython
+    [ pkgconfig dbus glib alsaLib pythonPackages.python pythonPackages.wrapPython
       readline libsndfile udev libical
       # Disables GStreamer; not clear what it gains us other than a
       # zillion extra dependencies.
-      # gstreamer gst_plugins_base
+      # gstreamer gst-plugins-base
     ];
 
-  outputs = [ "dev" "out" "test" ];
+  outputs = [ "out" "dev" "test" ];
 
   patches = [ ./bluez-5.37-obexd_without_systemd-1.patch ];
 
@@ -53,6 +53,7 @@ stdenv.mkDerivation rec {
   # FIXME: Move these into a separate package to prevent Bluez from
   # depending on Python etc.
   postInstall = ''
+    cp ./attrib/gatttool $out/bin/gatttool
     mkdir -p $test/test
     cp -a test $test
     pushd $test/test
@@ -73,6 +74,10 @@ stdenv.mkDerivation rec {
     mkdir $out/sbin
     ln -s ../libexec/bluetooth/bluetoothd $out/sbin/bluetoothd
     ln -s ../libexec/bluetooth/obexd $out/sbin/obexd
+
+    # Add extra configuration
+    mkdir $out/etc/bluetooth
+    ln -s /etc/bluetooth/main.conf $out/etc/bluetooth/main.conf
   '';
 
   enableParallelBuilding = true;

@@ -8,7 +8,7 @@ stdenv.mkDerivation rec {
     sha256 = "1w7szm190phlkg7qx05ychlj2dbvkgkhx9gw6dx4d5rw62l6wwms";
   };
 
-  outputs = [ "dev" "out" "docdev" ];
+  outputs = [ "out" "dev" "devdoc" ];
   outputBin = "dev";
 
   buildInputs = [ pkgconfig libffi libtasn1 libiconv ];
@@ -24,7 +24,7 @@ stdenv.mkDerivation rec {
   meta = with stdenv.lib; {
     homepage = https://p11-glue.freedesktop.org/;
     platforms = platforms.all;
-    maintainers = with maintainers; [ urkud wkennington ];
+    maintainers = with maintainers; [ wkennington ];
     license = licenses.mit;
   };
 }

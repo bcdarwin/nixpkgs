@@ -11,16 +11,29 @@ with lib;
 let cfg = config.ec2; in
 
 {
-  imports = [ ../profiles/headless.nix ./ec2-data.nix ./amazon-grow-partition.nix ./amazon-init.nix ];
+  imports = [ ../profiles/headless.nix ./ec2-data.nix ./grow-partition.nix ./amazon-init.nix ];
 
   config = {
+
+    assertions = [
+      { assertion = cfg.hvm;
+        message = "Paravirtualized EC2 instances are no longer supported.";
+      }
+    ];
+
+    virtualisation.growPartition = cfg.hvm;
 
     fileSystems."/" = {
       device = "/dev/disk/by-label/nixos";
       autoResize = true;
     };
 
+    boot.extraModulePackages =
+      [ config.boot.kernelPackages.ixgbevf
+        config.boot.kernelPackages.ena
+      ];
     boot.initrd.kernelModules = [ "xen-blkfront" "xen-netfront" ];
+    boot.initrd.availableKernelModules = [ "ixgbevf" "ena" ];
     boot.kernelParams = mkIf cfg.hvm [ "console=ttyS0" ];
 
     # Prevent the nouveau kernel module from being loaded, as it
@@ -87,7 +100,6 @@ let cfg = config.ec2; in
             elif [ "$fsType" = ext3 ]; then
                 mp="/disk$diskNr"
                 diskNr=$((diskNr + 1))
-                echo "mounting $device on $mp..."
                 if mountFS "$device" "$mp" "" ext3; then
                     if [ -z "$diskForUnionfs" ]; then diskForUnionfs="$mp"; fi
                 fi
@@ -131,7 +143,7 @@ let cfg = config.ec2; in
     # Allow root logins only using the SSH key that the user specified
     # at instance creation time.
     services.openssh.enable = true;
-    services.openssh.permitRootLogin = "without-password";
+    services.openssh.permitRootLogin = "prohibit-password";
 
     # Force getting the hostname from EC2.
     networking.hostName = mkDefault "";

@@ -21,7 +21,7 @@ set which contains `emacsWithPackages`. For example, to override
 `emacsPackagesNg.emacsWithPackages`,
 ```
 let customEmacsPackages =
-      emacsPackagesNg.override (super: self: {
+      emacsPackagesNg.overrideScope (super: self: {
         # use a custom version of emacs
         emacs = ...;
         # use the unstable MELPA version of magit
@@ -85,13 +85,14 @@ stdenv.mkDerivation {
      done
 
      siteStart="$out/share/emacs/site-lisp/site-start.el"
+     siteStartByteCompiled="$siteStart"c
 
      # A dependency may have brought the original siteStart, delete it and
      # create our own
      # Begin the new site-start.el by loading the original, which sets some
      # NixOS-specific paths. Paths are searched in the reverse of the order
      # they are specified in, so user and system profile paths are searched last.
-     rm -f $siteStart
+     rm -f $siteStart $siteStartByteCompiled
      cat >"$siteStart" <<EOF
 (load-file "$emacs/share/emacs/site-lisp/site-start.el")
 (add-to-list 'load-path "$out/share/emacs/site-lisp")
@@ -113,6 +114,19 @@ EOF
       makeWrapper "$prog" "$out/bin/$progname" \
         --suffix EMACSLOADPATH ":" "$deps/share/emacs/site-lisp:"
     done
+
+    # Wrap MacOS app
+    # this has to pick up resources and metadata
+    # to recognize it as an "app"
+    if [ -d "$emacs/Applications/Emacs.app" ]; then
+      mkdir -p $out/Applications/Emacs.app/Contents/MacOS
+      cp -r $emacs/Applications/Emacs.app/Contents/Info.plist \
+            $emacs/Applications/Emacs.app/Contents/PkgInfo \
+            $emacs/Applications/Emacs.app/Contents/Resources \
+            $out/Applications/Emacs.app/Contents
+      makeWrapper $emacs/Applications/Emacs.app/Contents/MacOS/Emacs $out/Applications/Emacs.app/Contents/MacOS/Emacs \
+        --suffix EMACSLOADPATH ":" "$deps/share/emacs/site-lisp:"
+    fi
 
     mkdir -p $out/share
     # Link icons and desktop files into place

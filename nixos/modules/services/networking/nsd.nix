@@ -30,6 +30,7 @@ let
       cd $out/zones
 
       for zoneFile in *; do
+        echo "|- checking zone '$out/zones/$zoneFile'"
         ${nsdPkg}/sbin/nsd-checkzone "$zoneFile" "$zoneFile" || {
           if grep -q \\\\\\$ "$zoneFile"; then
             echo zone "$zoneFile" contains escaped dollar signes \\\$
@@ -71,6 +72,7 @@ let
       # interfaces
     ${forEach "  ip-address: " cfg.interfaces}
 
+      ip-freebind:         ${yesOrNo  cfg.ipFreebind}
       hide-version:        ${yesOrNo  cfg.hideVersion}
       identity:            "${cfg.identity}"
       ip-transparent:      ${yesOrNo  cfg.ipTransparent}
@@ -84,7 +86,7 @@ let
       reuseport:           ${yesOrNo  cfg.reuseport}
       round-robin:         ${yesOrNo  cfg.roundRobin}
       server-count:        ${toString cfg.serverCount}
-      ${if cfg.statistics == null then "" else "statistics:          ${toString cfg.statistics}"}
+      ${maybeToString "statistics: " cfg.statistics}
       tcp-count:           ${toString cfg.tcpCount}
       tcp-query-count:     ${toString cfg.tcpQueryCount}
       tcp-timeout:         ${toString cfg.tcpTimeout}
@@ -117,7 +119,8 @@ let
   '';
 
   yesOrNo = b: if b then "yes" else "no";
-  maybeString = pre: s: if s == null then "" else ''${pre} "${s}"'';
+  maybeString = prefix: x: if x == null then "" else ''${prefix} "${x}"'';
+  maybeToString = prefix: x: if x == null then "" else ''${prefix} ${toString x}'';
   forEach = pre: l: concatMapStrings (x: pre + x + "\n") l;
 
 
@@ -145,6 +148,11 @@ let
       ${maybeString "outgoing-interface: " zone.outgoingInterface}
     ${forEach     "  rrl-whitelist: "      zone.rrlWhitelist}
       ${maybeString "zonestats: "          zone.zoneStats}
+
+      ${maybeToString "max-refresh-time: " zone.maxRefreshSecs}
+      ${maybeToString "min-refresh-time: " zone.minRefreshSecs}
+      ${maybeToString "max-retry-time:   " zone.maxRetrySecs}
+      ${maybeToString "min-retry-time:   " zone.minRetrySecs}
 
       allow-axfr-fallback: ${yesOrNo       zone.allowAXFRFallback}
     ${forEach     "  allow-notify: "       zone.allowNotify}
@@ -241,6 +249,44 @@ let
         '';
       };
 
+      maxRefreshSecs = mkOption {
+        type = types.nullOr types.int;
+        default = null;
+        description = ''
+          Limit refresh time for secondary zones. This is the timer which
+          checks to see if the zone has to be refetched when it expires.
+          Normally the value from the SOA record is used, but this  option
+          restricts that value.
+        '';
+      };
+
+      minRefreshSecs = mkOption {
+        type = types.nullOr types.int;
+        default = null;
+        description = ''
+          Limit refresh time for secondary zones.
+        '';
+      };
+
+      maxRetrySecs = mkOption {
+        type = types.nullOr types.int;
+        default = null;
+        description = ''
+          Limit retry time for secondary zones. This is the timeout after
+          a failed fetch attempt for the zone. Normally the value from
+          the SOA record is used, but this option restricts that value.
+        '';
+      };
+
+      minRetrySecs = mkOption {
+        type = types.nullOr types.int;
+        default = null;
+        description = ''
+          Limit retry time for secondary zones.
+        '';
+      };
+
+
       notify = mkOption {
         type = types.listOf types.str;
         default = [];
@@ -300,12 +346,10 @@ let
       };
 
       rrlWhitelist = mkOption {
-        type = types.listOf types.str;
+        type = with types; listOf (enum [ "nxdomain" "error" "referral" "any" "rrsig" "wildcard" "nodata" "dnskey" "positive" "all" ]);
         default = [];
         description = ''
           Whitelists the given rrl-types.
-          The RRL classification types are:  nxdomain,  error, referral, any,
-          rrsig, wildcard, nodata, dnskey, positive, all
         '';
       };
 
@@ -363,6 +407,15 @@ in
       default = [ "127.0.0.0" "::1" ];
       description = ''
         What addresses the server should listen to.
+      '';
+    };
+
+    ipFreebind = mkOption {
+      type = types.bool;
+      default = false;
+      description = ''
+        Whether to bind to nonlocal addresses and interfaces that are down.
+        Similar to ip-transparent.
       '';
     };
 
@@ -758,6 +811,7 @@ in
 
       serviceConfig = {
         ExecStart = "${nsdPkg}/sbin/nsd -d -c ${nsdEnv}/nsd.conf";
+        StandardError = "null";
         PIDFile = pidFile;
         Restart = "always";
         RestartSec = "4s";

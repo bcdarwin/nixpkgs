@@ -1,12 +1,19 @@
-{ stdenv, fetchurl, openssl, python, zlib, libuv, v8, utillinux, http-parser
-, pkgconfig, runCommand, which, libtool
+{ stdenv, fetchurl, openssl, python2, zlib, libuv, v8, utillinux, http-parser
+, pkgconfig, runCommand, which, libtool, fetchpatch
 , callPackage
+, darwin ? null
+, enableNpm ? true
 }@args:
 
-import ./nodejs.nix (args // rec {
-  version = "6.2.0";
-  src = fetchurl {
-    url = "https://nodejs.org/download/release/v${version}/node-v${version}.tar.xz";
-    sha256 = "14p4ah9gsgifj25g2akp7kyqhnqvq726n74h4rfj7wnidxhgwcw6";
-  };
-})
+let
+  nodejs = import ./nodejs.nix args;
+  baseName = if enableNpm then "nodejs" else "nodejs-slim";
+in
+  stdenv.mkDerivation (nodejs // rec {
+    version = "6.9.5";
+    name = "${baseName}-${version}";
+    src = fetchurl {
+      url = "https://nodejs.org/download/release/v${version}/node-v${version}.tar.xz";
+      sha256 = "1cxnsprv2sy2djskx6yfw14f578s1fwzvmvnw7rh75djajix3znp";
+    };
+  })

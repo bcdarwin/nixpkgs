@@ -11,7 +11,6 @@ in {
       description = "Enable unclutter to hide your mouse cursor when inactive";
       type = types.bool;
       default = false;
-      example = true;
     };
 
     package = mkOption {
@@ -39,12 +38,6 @@ in {
       default = 1;
     };
 
-    displayName = mkOption {
-      description = "Name of the X11 display";
-      type = types.str;
-      default = ":0";
-    };
-
     excluded = mkOption {
       description = "Names of windows where unclutter should not apply";
       type = types.listOf types.str;
@@ -63,16 +56,17 @@ in {
   config = mkIf cfg.enable {
     systemd.user.services.unclutter = {
       description = "unclutter";
-      wantedBy = [ "default.target" ];
+      wantedBy = [ "graphical-session.target" ];
+      partOf = [ "graphical-session.target" ];
       serviceConfig.ExecStart = ''
         ${cfg.package}/bin/unclutter \
           -idle ${toString cfg.timeout} \
-          -display ${cfg.displayName} \
           -jitter ${toString (cfg.threeshold - 1)} \
           ${optionalString cfg.keystroke "-keystroke"} \
           ${concatMapStrings (x: " -"+x) cfg.extraOptions} \
           -not ${concatStringsSep " " cfg.excluded} \
       '';
+      serviceConfig.PassEnvironment = "DISPLAY";
       serviceConfig.RestartSec = 3;
       serviceConfig.Restart = "always";
     };

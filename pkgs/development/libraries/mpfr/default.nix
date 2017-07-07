@@ -1,4 +1,6 @@
-{ stdenv, fetchurl, gmp }:
+{ stdenv, fetchurl, gmp
+, buildPlatform, hostPlatform
+}:
 
 stdenv.mkDerivation rec {
   name = "mpfr-3.1.3";
@@ -10,16 +12,19 @@ stdenv.mkDerivation rec {
 
   patches = [ ./upstream.patch ];
 
-  outputs = [ "dev" "out" "doc" ];
+  outputs = [ "out" "dev" "doc" ];
 
   # mpfr.h requires gmp.h
   propagatedBuildInputs = [ gmp ];
 
-  configureFlags =
-    stdenv.lib.optional stdenv.isSunOS "--disable-thread-safe" ++
-    stdenv.lib.optional stdenv.is64bit "--with-pic";
+  # FIXME needs gcc 4.9 in bootstrap tools
+  hardeningDisable = [ "stackprotector" ];
 
-  doCheck = true;
+  configureFlags =
+    stdenv.lib.optional hostPlatform.isSunOS "--disable-thread-safe" ++
+    stdenv.lib.optional hostPlatform.is64bit "--with-pic";
+
+  doCheck = hostPlatform == buildPlatform;
 
   enableParallelBuilding = true;
 

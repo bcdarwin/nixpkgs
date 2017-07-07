@@ -1,22 +1,22 @@
 {
   "elm-lang/virtual-dom" = {
-    version = "1.0.0";
-    sha256 = "0pa8k04g9yfixahsb30j0rbhfh6hwdh7xmm2fvk0hkidw7b4xg57";
+    version = "2.0.1";
+    sha256 = "19nfjx072m7a7bx8flc50vbmiww172jmscyq9x91cr2kby5hvbw3";
   };
   "evancz/elm-markdown" = {
-    version = "3.0.0";
-    sha256 = "0r3hcim4mpn46ahv1q6sjp6i2viyp7jik6i71xgwmvfb9drns2p6";
+    version = "3.0.1";
+    sha256 = "144lzpcapf2mhqiz90mkllmm4skrcs0iha1daps42qn3xps7hvmj";
   };
   "elm-lang/html" = {
-    version = "1.0.0";
-    sha256 = "16cr01yxkpkmgbgclp2p80nd62a6fjw3qipzjsgksrhwv9vv4gm4";
+    version = "2.0.0";
+    sha256 = "05sqjd5n8jnq4lv5v0ipcg98b8im1isnnl4wns1zzn4w5nbrjjzi";
   };
   "elm-lang/svg" = {
-    version = "1.0.0";
-    sha256 = "0c29y6c58x2sq1bl29z1hr5gi2rlza8clk7ssgzmsf4xbvcczbjx";
+    version = "2.0.0";
+    sha256 = "1c7p967n1yhynravqwgh80vprwz7r2r1n0x3icn5wzk9iaqs069l";
   };
   "elm-lang/core" = {
-    version = "4.0.0";
-    sha256 = "04qgzgv90qyhjk55yw4szy50h2dqdlm0a2padbgn02yf4bb1b4nw";
+    version = "5.0.0";
+    sha256 = "0gqyc09bh43pi7r2cizyjm5y0zpgarv3is17dl325qvxb9s1y2gn";
   };
 }

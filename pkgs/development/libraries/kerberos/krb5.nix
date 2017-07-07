@@ -11,14 +11,15 @@ in
 with stdenv.lib;
 stdenv.mkDerivation rec {
   name = "${type}krb5-${version}";
-  version = "1.14.2";
+  majorVersion = "1.15";
+  version = "${majorVersion}";
 
   src = fetchurl {
-    url = "${meta.homepage}dist/krb5/1.14/krb5-${version}.tar.gz";
-    sha256 = "09wbv969ak4fqlqr1ip5bi62fny1zlp1vwjarvj6a6cdfzkdgjkb";
+    url = "${meta.homepage}dist/krb5/${majorVersion}/krb5-${version}.tar.gz";
+    sha256 = "0z0jxm6ppbxi9anv2h12nrb5lpwl95f96kw6dx7sn268fhkpad7x";
   };
 
-  configureFlags = optional stdenv.isFreeBSD ''WARN_CFLAGS=""'';
+  configureFlags = [ "--with-tcl=no" ] ++ optional stdenv.isFreeBSD ''WARN_CFLAGS=""'';
 
   nativeBuildInputs = [ pkgconfig perl yacc ]
     # Provides the mig command used by the build scripts

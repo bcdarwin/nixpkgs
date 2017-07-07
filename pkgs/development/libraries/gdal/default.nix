@@ -1,58 +1,58 @@
 { stdenv, fetchurl, composableDerivation, unzip, libjpeg, libtiff, zlib
 , postgresql, mysql, libgeotiff, pythonPackages, proj, geos, openssl
-, libpng
-, netcdf, hdf5 , curl
-, netcdfSupport ? true
- }:
+, libpng, sqlite, libspatialite, poppler, hdf4
+, libiconv
+, netcdfSupport ? true, netcdf, hdf5 , curl
+}:
+
+with stdenv.lib;
 
 composableDerivation.composableDerivation {} (fixed: rec {
-  version = "2.0.2";
+  version = "2.1.3";
   name = "gdal-${version}";
 
   src = fetchurl {
     url = "http://download.osgeo.org/gdal/${version}/${name}.tar.gz";
-    sha256 = "db7722caf8d9dd798ec18012b9cacf40a518918466126a88b9fd277bd7d40cc4";
+    sha256 = "0jh7filpf5dk5iz5acj7y3y49ihnzqypxckdlj0sjigbqq6hlsmf";
   };
 
-  buildInputs = [ unzip libjpeg libtiff libpng proj openssl ]
+  buildInputs = [ unzip libjpeg libtiff libpng proj openssl sqlite
+    libspatialite poppler hdf4 ]
   ++ (with pythonPackages; [ python numpy wrapPython ])
-  ++ (stdenv.lib.optionals netcdfSupport [ netcdf hdf5 curl ]);
+  ++ stdenv.lib.optional stdenv.isDarwin libiconv
+  ++ stdenv.lib.optionals netcdfSupport [ netcdf hdf5 curl ];
 
-  patches = [
-    # This ensures that the python package is installed into gdal's prefix,
-    # rather than trying to install into python's prefix.
-    ./python.patch
-  ];
+  hardeningDisable = [ "format" ];
 
-  # Don't use optimization for gcc >= 4.3. That's said to be causing segfaults.
-  # Unset CC and CXX as they confuse libtool.
-  preConfigure = "export CFLAGS=-O0 CXXFLAGS=-O0; unset CC CXX";
+  # - Unset CC and CXX as they confuse libtool.
+  # - teach gdal that libdf is the legacy name for libhdf
+  preConfigure = ''
+      unset CC CXX
+      substituteInPlace configure \
+      --replace "-lmfhdf -ldf" "-lmfhdf -lhdf"
+    '';
 
   configureFlags = [
     "--with-jpeg=${libjpeg.dev}"
     "--with-libtiff=${libtiff.dev}" # optional (without largetiff support)
-    "--with-libpng=${libpng.dev}"   # optional
+    "--with-png=${libpng.dev}"      # optional
+    "--with-poppler=${poppler.dev}" # optional
     "--with-libz=${zlib.dev}"       # optional
-
     "--with-pg=${postgresql}/bin/pg_config"
-    "--with-mysql=${mysql.lib}/bin/mysql_config"
+    "--with-mysql=${mysql.lib.dev}/bin/mysql_config"
     "--with-geotiff=${libgeotiff}"
+    "--with-sqlite3=${sqlite.dev}"
+    "--with-spatialite=${libspatialite}"
     "--with-python"               # optional
     "--with-static-proj4=${proj}" # optional
     "--with-geos=${geos}/bin/geos-config"# optional
+    "--with-hdf4=${hdf4.dev}" # optional
     (if netcdfSupport then "--with-netcdf=${netcdf}" else "")
   ];
 
-  # Prevent this:
-  #
-  #   Checking .pth file support in /nix/store/xkrmb8xnvqxzjwsdmasqmsdh1a5y2y99-gdal-1.11.2/lib/python2.7/site-packages/
-  #   /nix/store/pbi1lgank10fy0xpjckbdpgacqw34dsz-python-2.7.9/bin/python -E -c pass
-  #   TEST FAILED: /nix/store/xkrmb8xnvqxzjwsdmasqmsdh1a5y2y99-gdal-1.11.2/lib/python2.7/site-packages/ does NOT support .pth files
-  #   error: bad install directory or PYTHONPATH
   preBuild = ''
-    pythonInstallDir=$out/lib/${pythonPackages.python.libPrefix}/site-packages
-    mkdir -p $pythonInstallDir
-    export PYTHONPATH=''${PYTHONPATH:+''${PYTHONPATH}:}$pythonInstallDir
+    substituteInPlace swig/python/GNUmakefile \
+      --replace "ifeq (\$(STD_UNIX_LAYOUT),\"TRUE\")" "ifeq (1,1)"
   '';
 
   postInstall = ''
@@ -64,6 +64,6 @@ composableDerivation.composableDerivation {} (fixed: rec {
     homepage = http://www.gdal.org/;
     license = stdenv.lib.licenses.mit;
     maintainers = [ stdenv.lib.maintainers.marcweber ];
-    platforms = stdenv.lib.platforms.linux;
+    platforms = with stdenv.lib.platforms; linux ++ darwin;
   };
 })

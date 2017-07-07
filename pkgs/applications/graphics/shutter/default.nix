@@ -1,4 +1,4 @@
-{ stdenv, fetchurl, perl, perlPackages, makeWrapper, imagemagick, gdk_pixbuf, librsvg }:
+{ stdenv, fetchurl, fetchpatch, perl, perlPackages, makeWrapper, imagemagick, gdk_pixbuf, librsvg }:
 
 let
   perlModules = with perlPackages;
@@ -18,6 +18,14 @@ stdenv.mkDerivation rec {
     sha256 = "09cn3scwy98wqxkrjhnmxhpfnnynlbb41856yn5m3zwzqrxiyvak";
   };
 
+  patches = [
+    (fetchpatch {
+      url = "http://svnweb.mageia.org/packages/cauldron/shutter/current/SOURCES/CVE-2015-0854.patch?revision=880308&view=co";
+      name = "CVE-2015-0854.patch";
+      sha256 = "14r18sxz3ylf39cn9b85snjhjxdk6ngq4vnpljwghw2q5430nb12";
+    })
+  ];
+
   buildInputs = [ perl makeWrapper gdk_pixbuf librsvg ] ++ perlModules;
 
   installPhase = ''
@@ -27,7 +35,7 @@ stdenv.mkDerivation rec {
 
     wrapProgram $out/bin/shutter \
       --set PERL5LIB "${stdenv.lib.makePerlPath perlModules}" \
-      --prefix PATH : "${imagemagick}/bin" \
+      --prefix PATH : "${imagemagick.out}/bin" \
       --set GDK_PIXBUF_MODULE_FILE "$GDK_PIXBUF_MODULE_FILE"
   '';
 

@@ -3,23 +3,25 @@
 let
 
   bashCompletion = fetchFromGitHub {
-    owner = "przepompownia";
+    owner = "imomaliev";
     repo = "tmux-bash-completion";
-    rev = "678a27616b70c649c6701cae9cd8c92b58cc051b";
-    sha256 = "1d2myrh4xiay9brsxafb02pi922760sdkyyy5xjm4sfh4iimc4zf";
+    rev = "fcda450d452f07d36d2f9f27e7e863ba5241200d";
+    sha256 = "092jpkhggjqspmknw7h3icm0154rg21mkhbc71j5bxfmfjdxmya8";
   };
 
 in
 
 stdenv.mkDerivation rec {
   name = "tmux-${version}";
-  version = "2.2";
+  version = "2.5";
+
+  outputs = [ "out" "man" ];
 
   src = fetchFromGitHub {
     owner = "tmux";
     repo = "tmux";
     rev = version;
-    sha256 = "04k9yxjp357sdw6365z6qx87vmwygl3v3wpvd78pp63ky5hzbbay";
+    sha256 = "0zwjngfaqrlwwbzicc5pq5pyws8f1qghcajvj0hwkipj51hqyswf";
   };
 
   nativeBuildInputs = [ pkgconfig autoreconfHook ];

@@ -1,30 +1,26 @@
-{ stdenv, fetchFromGitHub, gtk-engine-murrine }:
+{ stdenv, fetchFromGitHub, autoreconfHook, gtk-engine-murrine }:
 
 stdenv.mkDerivation rec {
   pname = "Blackbird";
-  version = "2016-04-10";
+  version = "2017-02-20";
   name = "${pname}-${version}";
 
   src = fetchFromGitHub {
     repo = "${pname}";
     owner = "shimmerproject";
-    rev = "e9f780993c957e3349f97b0e2e6fabdc36ccefb0";
-    sha256 = "00fdd63lnb2gmsn6cbdkanvh3rvz48jg08gmzg372byhj70m63hi";
+    rev = "51eaa1853675866e2e4bd026876162b35ab1a196";
+    sha256 = "06d040s5jmw9v6fkif6zjcd3lp56dmvwchcwflinc165iazbp5n2";
   };
 
-  buildInputs = [ gtk-engine-murrine ];
-  
-  dontBuild = true;
+  nativeBuildInputs = [ autoreconfHook ];
 
-  installPhase = ''
-    mkdir -p $out/share/themes/${pname}
-    cp -a * $out/share/themes/${pname}/
-  '';
+  buildInputs = [ gtk-engine-murrine ];
 
   meta = {
     description = "Dark Desktop Suite for Gtk, Xfce and Metacity";
     homepage = http://github.com/shimmerproject/Blackbird;
     license = with stdenv.lib.licenses; [ gpl2Plus cc-by-nc-sa-30 ];
+    platforms = stdenv.lib.platforms.linux;
     maintainers = [ stdenv.lib.maintainers.romildo ];
   };
 }

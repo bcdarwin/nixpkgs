@@ -1,37 +1,36 @@
-{ stdenv, fetchFromGitHub, libtoxcore, cmake, jsoncpp, lib, stdenvAdapters, libsodium, systemd, enableDebugging, libcap }:
+{ stdenv, fetchFromGitHub, cmake, nlohmann_json,
+libtoxcore, libsodium, systemd, libcap, zeromq }:
 
-with lib;
+with stdenv.lib;
 
 let
-  libtoxcoreLocked = stdenv.lib.overrideDerivation libtoxcore (oldAttrs: {
-    name = "libtoxcore-20151110";
-    src = fetchFromGitHub {
-      owner  = "irungentoo";
-      repo   = "toxcore";
-      rev    = "22634a4b93dda5b17cb357cd84ac46fcfdc22519";
-      sha256 = "01i92wm5lg2p7k71qn23sfh01xi8acdrwn23rk52n54h424l1fgy";
-    };
-  });
-
-in stdenv.mkDerivation {
-  name = "toxvpn-20151111";
+  systemdOrNull = if stdenv.system == "x86_64-darwin" then null else systemd;
+  if_systemd = optional (systemdOrNull != null);
+in stdenv.mkDerivation rec {
+  name = "toxvpn-${version}";
+  version = "2017-06-25";
 
   src = fetchFromGitHub {
     owner  = "cleverca22";
     repo   = "toxvpn";
-    rev    = "1d06bb7da277d46abb8595cf152210c4ccf0ba7d";
-    sha256 = "1himrbdgsbkfha1d87ysj2hwyz4a6z9yxqbai286imkya84q7r15";
+    rev    = "7bd6f169d69c511affa8c9672e8f794e4e205a44";
+    sha256 = "1km8hkrxmrnca1b49vbw5kyldayaln5plvz78vhf8325r6c5san0";
   };
 
-  buildInputs = [ cmake libtoxcoreLocked jsoncpp libsodium systemd libcap ];
+  buildInputs = [ libtoxcore nlohmann_json libsodium zeromq ]
+    ++ if_systemd systemd
+    ++ optional (stdenv.system != "x86_64-darwin") libcap;
+  nativeBuildInputs = [ cmake ];
 
-  cmakeFlags = [ "-DSYSTEMD=1" ];
+  cmakeFlags = optional stdenv.isLinux [ "-DSYSTEMD=1" ];
+
+  postInstall = "$out/bin/toxvpn -h";
 
   meta = with stdenv.lib; {
     description = "A powerful tool that allows one to make tunneled point to point connections over Tox";
     homepage    = https://github.com/cleverca22/toxvpn;
     license     = licenses.gpl3;
     maintainers = with maintainers; [ cleverca22 obadz ];
-    platforms   = platforms.linux;
+    platforms   = platforms.linux ++ platforms.darwin;
   };
 }

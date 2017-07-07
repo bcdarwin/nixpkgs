@@ -1,36 +1,28 @@
-{ stdenv, fetchFromGitHub, cmake, gmp, mpfr, luajit, boost, python
-, gperftools, ninja, makeWrapper }:
+{ stdenv, fetchFromGitHub, cmake, gmp }:
 
 stdenv.mkDerivation rec {
   name = "lean-${version}";
-  version = "20160117";
+  version = "3.2.0";
 
   src = fetchFromGitHub {
     owner  = "leanprover";
     repo   = "lean";
-    rev    = "b2554dcb8f45899ccce84f226cd67b6460442930";
-    sha256 = "1gr024bly92kdjky5qvcm96gn86ijakziiyrsz91h643n1iyxhms";
+    rev    = "v${version}";
+    sha256 = "13sb9rwgc9ni2j5zx77imjhkzhix9d7klsdb8cg68c17b20sy1g3";
   };
 
-  buildInputs = [ gmp mpfr luajit boost cmake python gperftools ninja makeWrapper ];
+  buildInputs = [ gmp cmake ];
   enableParallelBuilding = true;
 
   preConfigure = ''
-    patchShebangs bin/leantags
     cd src
   '';
 
-  cmakeFlags = [ "-DCMAKE_BUILD_TYPE=Release" ];
-
-  postInstall = ''
-    wrapProgram $out/bin/linja --prefix PATH : $out/bin:${ninja}/bin
-  '';
-
-  meta = {
+  meta = with stdenv.lib; {
     description = "Automatic and interactive theorem prover";
     homepage    = "http://leanprover.github.io";
-    license     = stdenv.lib.licenses.asl20;
-    platforms   = stdenv.lib.platforms.unix;
-    maintainers = [ stdenv.lib.maintainers.thoughtpolice ];
+    license     = licenses.asl20;
+    platforms   = platforms.unix;
+    maintainers = with maintainers; [ thoughtpolice gebner ];
   };
 }

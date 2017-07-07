@@ -1,21 +1,21 @@
-{ stdenv, go16Packages, ruby, bundlerEnv, zip }:
+{ stdenv, consul, ruby, bundlerEnv, zip }:
 
 let
   # `sass` et al
   gems = bundlerEnv {
     name = "consul-ui-deps";
-    gemfile = ./Gemfile;
-    lockfile = ./Gemfile.lock;
-    gemset = ./gemset.nix;
+    gemdir = ./.;
   };
 in
 
 stdenv.mkDerivation {
-  name = "consul-ui-${go16Packages.consul.rev}";
+  name = "consul-ui-${consul.version}";
 
-  src = go16Packages.consul.src;
+  src = consul.src;
 
   buildInputs = [ ruby gems zip ];
+
+  patchPhase = "patchShebangs ./ui/scripts/dist.sh";
 
   buildPhase = ''
     # Build ui static files

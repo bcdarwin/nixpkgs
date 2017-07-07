@@ -23,12 +23,12 @@ let
   ctlpath = lib.makeBinPath [ bash gnused gnugrep coreutils utillinux procps ];
 
 in stdenv.mkDerivation rec {
-  version = "16.04";
+  version = "17.01";
   name = "ejabberd-${version}";
 
   src = fetchurl {
     url = "http://www.process-one.net/downloads/ejabberd/${version}/${name}.tgz";
-    sha256 = "1hrcswk03x5x6f6xy8sac4ihhi6jcmsfp6449k3570j39vklz5ix";
+    sha256 = "02y9f1zxqvqrhapfay3avkys0llpyjsag6rpz5vfig01zqjqzyky";
   };
 
   nativeBuildInputs = [ fakegit ];
@@ -48,23 +48,21 @@ in stdenv.mkDerivation rec {
 
     inherit src;
 
-    configureFlags = [ "--enable-all" "--with-sqlite3=${sqlite}" ];
+    configureFlags = [ "--enable-all" "--with-sqlite3=${sqlite.dev}" ];
 
     buildInputs = [ git erlang openssl expat libyaml sqlite pam zlib elixir ];
 
     GIT_SSL_CAINFO = "${cacert}/etc/ssl/certs/ca-bundle.crt";
 
-    preBuild = ''
-      patchShebangs .
-    '';
-
     makeFlags = [ "deps" ];
+
+    phases = [ "unpackPhase" "configurePhase" "buildPhase" "installPhase" ];
 
     installPhase = ''
       for i in deps/*; do
         ( cd $i
           git reset --hard
-          git clean -fdx
+          git clean -ffdx
           git describe --always --tags > .rev
           rm -rf .git
         )
@@ -76,7 +74,7 @@ in stdenv.mkDerivation rec {
 
     outputHashMode = "recursive";
     outputHashAlgo = "sha256";
-    outputHash = "0zmb7g00y5q4alf70i1chv3yim63i03sy4p8i83bzvxri59vw0zv";
+    outputHash = "0flybfhq6qv1ihsjfg9p7191bffip7gpizg29wdbf1x6qgxhpz5r";
   };
 
   configureFlags =
@@ -97,6 +95,7 @@ in stdenv.mkDerivation rec {
   preBuild = ''
     cp -r $deps deps
     chmod -R +w deps
+    patchShebangs deps
   '';
 
   postInstall = ''

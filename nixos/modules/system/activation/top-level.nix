@@ -45,10 +45,15 @@ let
 
         ln -s ${kernelPath} $out/kernel
         ln -s ${config.system.modulesTree} $out/kernel-modules
+        ${optionalString (pkgs.stdenv.platform.kernelDTB or false) ''
+          ln -s ${config.boot.kernelPackages.kernel}/dtbs $out/dtbs
+        ''}
 
         echo -n "$kernelParams" > $out/kernel-params
 
         ln -s ${config.system.build.initialRamdisk}/initrd $out/initrd
+
+        ln -s ${config.system.build.initialRamdiskSecretAppender}/bin/append-initrd-secrets $out
 
         ln -s ${config.hardware.firmware}/lib/firmware $out/firmware
       ''}
@@ -98,7 +103,7 @@ let
   # `switch-to-configuration' that activates the configuration and
   # makes it bootable.
   baseSystem = showWarnings (
-    if [] == failed then pkgs.stdenv.mkDerivation {
+    if [] == failed then pkgs.stdenvNoCC.mkDerivation {
       name = let hn = config.networking.hostName;
                  nn = if (hn != "") then hn else "unnamed";
           in "nixos-system-${nn}-${config.system.nixosLabel}";

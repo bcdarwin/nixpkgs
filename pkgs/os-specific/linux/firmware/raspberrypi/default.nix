@@ -1,16 +1,17 @@
-{stdenv, fetchurl }:
+{ stdenv, fetchFromGitHub }:
 
-let
+stdenv.mkDerivation rec {
+  name = "raspberrypi-firmware-${version}";
+  version = "1.20170427";
 
-  rev = "1.20160315";
-
-in stdenv.mkDerivation {
-  name = "raspberrypi-firmware-${rev}";
-
-  src = fetchurl {
-    url = "https://github.com/raspberrypi/firmware/archive/${rev}.tar.gz";
-    sha256 = "0a7ycv01s0kk84szsh51hy2mjjil1dzdk0g7k83h50d5nya090fl";
+  src = fetchFromGitHub {
+    owner = "raspberrypi";
+    repo = "firmware";
+    rev = version;
+    sha256 = "0n79nij0rlwjx3zqs4p3wcyrgrgg9gmsf1a526r91c689r5lpwvl";
   };
+
+  dontStrip = true;    # Stripping breaks some of the binaries
 
   installPhase = ''
     mkdir -p $out/share/raspberrypi/boot
@@ -19,8 +20,10 @@ in stdenv.mkDerivation {
     cp opt/vc/LICENCE $out/share/raspberrypi
 
     for f in $out/bin/*; do
-      patchelf --set-interpreter "$(cat $NIX_CC/nix-support/dynamic-linker)" "$f"
-      patchelf --set-rpath "$out/lib" "$f"
+      if isELF "$f"; then
+        patchelf --set-interpreter "$(cat $NIX_CC/nix-support/dynamic-linker)" "$f"
+        patchelf --set-rpath "$out/lib" "$f"
+      fi
     done
   '';
 
@@ -28,7 +31,7 @@ in stdenv.mkDerivation {
     description = "Firmware for the Raspberry Pi board";
     homepage = https://github.com/raspberrypi;
     license = licenses.unfree;
-    platforms = [ "armv6l-linux" "armv7l-linux" ];
+    platforms = [ "armv6l-linux" "armv7l-linux" "aarch64-linux" ];
     maintainers = with maintainers; [ viric tavyc ];
   };
 }

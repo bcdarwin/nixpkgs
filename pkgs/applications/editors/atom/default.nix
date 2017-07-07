@@ -1,12 +1,12 @@
-{ stdenv, fetchurl, lib, makeWrapper, gvfs, atomEnv }:
+{ stdenv, fetchurl, lib, makeWrapper, gvfs, atomEnv}:
 
 stdenv.mkDerivation rec {
   name = "atom-${version}";
-  version = "1.7.3";
+  version = "1.18.0";
 
   src = fetchurl {
     url = "https://github.com/atom/atom/releases/download/v${version}/atom-amd64.deb";
-    sha256 = "1fd6j05czir2z3bvkf0mixkfncp73jw8kgqgaqxjjg546381yb7a";
+    sha256 = "07hssch8sfyp5sji91lx4v62m8zmy9j971i968p747dwfp6g0my6";
     name = "${name}.deb";
   };
 
@@ -14,7 +14,7 @@ stdenv.mkDerivation rec {
 
   buildCommand = ''
     mkdir -p $out/usr/
-    ar p $src data.tar.gz | tar -C $out -xz ./usr
+    ar p $src data.tar.xz | tar -C $out -xJ ./usr
     substituteInPlace $out/usr/share/applications/atom.desktop \
       --replace /usr/share/atom $out/bin
     mv $out/usr/* $out/
@@ -31,6 +31,8 @@ stdenv.mkDerivation rec {
     patchelf --set-interpreter "$(cat $NIX_CC/nix-support/dynamic-linker)" \
       --set-rpath "${atomEnv.libPath}" \
       $out/share/atom/resources/app/apm/bin/node
+
+    find $out/share/atom -name "*.node" -exec patchelf --set-rpath "${atomEnv.libPath}:$out/share/atom" {} \;
   '';
 
   meta = with stdenv.lib; {

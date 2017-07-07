@@ -1,13 +1,13 @@
 { stdenv, fetchFromGitHub, bison, flex, openssl }:
 
 stdenv.mkDerivation rec {
-  name = "charybdis-3.5.1";
+  name = "charybdis-3.5.5";
 
   src = fetchFromGitHub {
     owner = "charybdis-ircd";
     repo = "charybdis";
     rev = name;
-    sha256 = "12lwfcgszama7140l1qhmhf1v05csipswrvqzmg8pkaazbag4ka7";
+    sha256 = "16bl516hcj1chgzkfnpg9bf9s6zr314pqzhlz6641lgyzaw1z3w0";
   };
 
   patches = [
@@ -19,6 +19,7 @@ stdenv.mkDerivation rec {
     "--enable-ipv6"
     "--enable-openssl=${openssl.dev}"
     "--with-program-prefix=charybdis-"
+    "--sysconfdir=/etc/charybdis"
   ];
 
   buildInputs = [ bison flex openssl ];

@@ -13,7 +13,7 @@ let
 
   resolvconfOptions = cfg.resolvconfOptions
     ++ optional cfg.dnsSingleRequest "single-request"
-    ++ optional cfg.dnsExtensionMechanism "ends0";
+    ++ optional cfg.dnsExtensionMechanism "edns0";
 in
 
 {
@@ -26,6 +26,19 @@ in
       example = "192.168.0.1 lanlocalhost";
       description = ''
         Additional entries to be appended to <filename>/etc/hosts</filename>.
+      '';
+    };
+
+    networking.hostConf = lib.mkOption {
+      type = types.lines;
+      default = "multi on";
+      example = ''
+        multi on
+        reorder on
+        trim lan
+      '';
+      description = ''
+        The contents of <filename>/etc/host.conf</filename>. See also <citerefentry><refentrytitle>host.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
       '';
     };
 
@@ -44,7 +57,7 @@ in
 
     networking.dnsExtensionMechanism = lib.mkOption {
       type = types.bool;
-      default = false;
+      default = true;
       description = ''
         Enable the <code>edns0</code> option in <filename>resolv.conf</filename>. With
         that option set, <code>glibc</code> supports use of the extension mechanisms for
@@ -68,6 +81,18 @@ in
       example = [ "ndots:1" "rotate" ];
       description = ''
         Set the options in <filename>/etc/resolv.conf</filename>.
+      '';
+    };
+
+    networking.timeServers = mkOption {
+      default = [
+        "0.nixos.pool.ntp.org"
+        "1.nixos.pool.ntp.org"
+        "2.nixos.pool.ntp.org"
+        "3.nixos.pool.ntp.org"
+      ];
+      description = ''
+        The set of NTP servers from which to synchronise.
       '';
     };
 
@@ -153,10 +178,10 @@ in
 
     environment.etc =
       { # /etc/services: TCP/UDP port assignments.
-        "services".source = pkgs.iana_etc + "/etc/services";
+        "services".source = pkgs.iana-etc + "/etc/services";
 
         # /etc/protocols: IP protocol numbers.
-        "protocols".source  = pkgs.iana_etc + "/etc/protocols";
+        "protocols".source  = pkgs.iana-etc + "/etc/protocols";
 
         # /etc/rpc: RPC program numbers.
         "rpc".source = pkgs.glibc.out + "/etc/rpc";
@@ -170,6 +195,9 @@ in
             ''}
             ${cfg.extraHosts}
           '';
+
+        # /etc/host.conf: resolver configuration file
+        "host.conf".text = cfg.hostConf;
 
         # /etc/resolvconf.conf: Configuration for openresolv.
         "resolvconf.conf".text =
@@ -194,13 +222,11 @@ in
             '' + cfg.extraResolvconfConf + ''
             '';
 
-      } // (optionalAttrs config.services.resolved.enable (
-        if dnsmasqResolve then {
-          "dnsmasq-resolv.conf".source = "/run/systemd/resolve/resolv.conf";
-        } else {
-          "resolv.conf".source = "/run/systemd/resolve/resolv.conf";
-        }
-      ));
+      } // optionalAttrs config.services.resolved.enable {
+        "resolv.conf".source = "/run/systemd/resolve/resolv.conf";
+      } // optionalAttrs (config.services.resolved.enable && dnsmasqResolve) {
+        "dnsmasq-resolv.conf".source = "/run/systemd/resolve/resolv.conf";
+      };
 
       networking.proxy.envVars =
         optionalAttrs (cfg.proxy.default != null) {
@@ -223,16 +249,11 @@ in
     # Install the proxy environment variables
     environment.sessionVariables = cfg.proxy.envVars;
 
-    # The ‘ip-up’ target is started when we have IP connectivity.  So
-    # services that depend on IP connectivity (like ntpd) should be
-    # pulled in by this target.
-    systemd.targets.ip-up.description = "Services Requiring IP Connectivity";
-
     # This is needed when /etc/resolv.conf is being overriden by networkd
     # and other configurations. If the file is destroyed by an environment
     # activation then it must be rebuilt so that applications which interface
     # with /etc/resolv.conf directly don't break.
-    system.activationScripts.resolvconf = stringAfter [ "etc" "tmpfs" "var" ]
+    system.activationScripts.resolvconf = stringAfter [ "etc" "specialfs" "var" ]
       ''
         # Systemd resolved controls its own resolv.conf
         rm -f /run/resolvconf/interfaces/systemd

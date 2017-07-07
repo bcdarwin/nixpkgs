@@ -3,11 +3,11 @@
 }:
 
 stdenv.mkDerivation rec {
-  name = "libsndfile-1.0.26";
+  name = "libsndfile-1.0.28";
 
   src = fetchurl {
     url = "http://www.mega-nerd.com/libsndfile/files/${name}.tar.gz";
-    sha256 = "14jhla289cj45946h0hq2an0a9g4wkwb3v4571bla6ixfvn20rfd";
+    sha256 = "1afzm7jx34jhqn32clc5xghyjglccam2728yxlx37yj2y0lkkwqz";
   };
 
   buildInputs = [ pkgconfig flac libogg libvorbis ]
@@ -15,7 +15,7 @@ stdenv.mkDerivation rec {
 
   enableParallelBuilding = true;
 
-  outputs = [ "dev" "out" "bin" "doc" ];
+  outputs = [ "bin" "dev" "out" "doc" ];
 
   # need headers from the Carbon.framework in /System/Library/Frameworks to
   # compile this on darwin -- not sure how to handle

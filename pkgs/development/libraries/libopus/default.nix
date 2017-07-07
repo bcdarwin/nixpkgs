@@ -1,17 +1,18 @@
-{ stdenv, fetchurl, fixedPoint ? false, withCustomModes ? true }:
+{ stdenv, fetchurl, fetchpatch
+, fixedPoint ? false, withCustomModes ? true }:
 
 let
-  version = "1.1.2";
+  version = "1.2.1";
 in
 stdenv.mkDerivation rec {
   name = "libopus-${version}";
 
   src = fetchurl {
-    url = "http://downloads.xiph.org/releases/opus/opus-${version}.tar.gz";
-    sha256 = "1z87x5c5x951lhnm70iqr2gqn15wns5cqsw8nnkvl48jwdw00a8f";
+    url = "https://archive.mozilla.org/pub/opus/opus-${version}.tar.gz";
+    sha256 = "0ch7yzgg4bn1g36bpjsfrgs4n19c84d7wpdida6yzifrrhwx7byg";
   };
 
-  outputs = [ "dev" "out" ];
+  outputs = [ "out" "dev" ];
 
   configureFlags = stdenv.lib.optional fixedPoint "--enable-fixed-point"
                 ++ stdenv.lib.optional withCustomModes "--enable-custom-modes";

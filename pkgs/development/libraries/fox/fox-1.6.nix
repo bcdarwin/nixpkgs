@@ -20,6 +20,8 @@ stdenv.mkDerivation rec {
 
   enableParallelBuilding = true;
 
+  hardeningDisable = [ "format" ];
+
   meta = {
     branch = "1.6";
     description = "A C++ based class library for building Graphical User Interfaces";
@@ -31,7 +33,7 @@ stdenv.mkDerivation rec {
       '';
     homepage = "http://fox-toolkit.org";
     license = stdenv.lib.licenses.lgpl3;
-    maintainers = [ stdenv.lib.maintainers.bbenoist ];
+    maintainers = [];
     platforms = stdenv.lib.platforms.mesaPlatforms;
   };
 }

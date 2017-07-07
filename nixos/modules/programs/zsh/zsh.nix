@@ -25,7 +25,10 @@ in
       enable = mkOption {
         default = false;
         description = ''
-          Whether to configure zsh as an interactive shell.
+          Whether to configure zsh as an interactive shell. To enable zsh for
+          a particular user, use the <option>users.users.&lt;name?&gt;.shell</option>
+          option for that user. To enable zsh system-wide use the
+          <option>users.defaultUserShell</option> option.
         '';
         type = types.bool;
       };
@@ -81,6 +84,13 @@ in
         type = types.bool;
       };
 
+      enableAutosuggestions = mkOption {
+        default = false;
+        description = ''
+          Enable zsh-autosuggestions
+        '';
+      };
+
     };
 
   };
@@ -99,23 +109,29 @@ in
 
       interactiveShellInit = ''
         # history defaults
-        export SAVEHIST=2000
-        export HISTSIZE=2000
-        export HISTFILE=$HOME/.zsh_history
+        SAVEHIST=2000
+        HISTSIZE=2000
+        HISTFILE=$HOME/.zsh_history
 
         setopt HIST_IGNORE_DUPS SHARE_HISTORY HIST_FCNTL_LOCK
 
-        ${cfge.interactiveShellInit}
-
-        ${cfg.promptInit}
-        ${zshAliases}
-
         # Tell zsh how to find installed completions
         for p in ''${(z)NIX_PROFILES}; do
-          fpath+=($p/share/zsh/site-functions $p/share/zsh/$ZSH_VERSION/functions)
+          fpath+=($p/share/zsh/site-functions $p/share/zsh/$ZSH_VERSION/functions $p/share/zsh/vendor-completions)
         done
 
         ${if cfg.enableCompletion then "autoload -U compinit && compinit" else ""}
+
+        ${optionalString (cfg.enableAutosuggestions)
+          "source ${pkgs.zsh-autosuggestions}/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+        }
+
+        ${zshAliases}
+        ${cfg.promptInit}
+
+        ${cfge.interactiveShellInit}
+
+        HELPDIR="${pkgs.zsh}/share/zsh/$ZSH_VERSION/help"
       '';
 
     };

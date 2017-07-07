@@ -1,27 +1,35 @@
-{ stdenv, fetchFromGitHub, cmake, libpfm, zlib, python, pkgconfig, pythonPackages, which, procps, gdb }:
+{ stdenv, fetchFromGitHub, cmake, libpfm, zlib, pkgconfig, python2Packages, which, procps, gdb }:
 
 stdenv.mkDerivation rec {
-  version = "4.2.0";
+  version = "4.5.0";
   name = "rr-${version}";
 
   src = fetchFromGitHub {
     owner = "mozilla";
     repo = "rr";
     rev = version;
-    sha256 = "03fl2wgbc1cilaw8hrhfqjsbpi05cid6k4cr3s2vmv5gx0dnrgy4";
+    sha256 = "114g1yhpjfyxcn0fkvnfi03lhrs11pj0a1945j2j8z90hx4dwba8";
   };
 
-  patchPhase = ''
+  postPatch = ''
     substituteInPlace src/Command.cc --replace '_BSD_SOURCE' '_DEFAULT_SOURCE'
+    sed '7i#include <math.h>' -i src/Scheduler.cc
     patchShebangs .
   '';
 
-  buildInputs = [ cmake libpfm zlib python pkgconfig pythonPackages.pexpect which procps gdb ];
+  buildInputs = [
+    cmake libpfm zlib python2Packages.python pkgconfig python2Packages.pexpect which procps gdb
+  ];
   cmakeFlags = [
     "-DCMAKE_C_FLAGS_RELEASE:STRING="
     "-DCMAKE_CXX_FLAGS_RELEASE:STRING="
     "-Ddisable32bit=ON"
   ];
+
+  # we turn on additional warnings due to hardening
+  NIX_CFLAGS_COMPILE = "-Wno-error";
+
+  hardeningDisable = [ "fortify" ];
 
   enableParallelBuilding = true;
 

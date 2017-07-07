@@ -2,20 +2,21 @@
 , containers, directory, elm-compiler, elm-package, fetchgit
 , filepath, haskeline, HUnit, mtl, parsec, QuickCheck, stdenv
 , test-framework, test-framework-hunit, test-framework-quickcheck2
+, text
 }:
 mkDerivation {
   pname = "elm-repl";
-  version = "0.17";
+  version = "0.18";
   src = fetchgit {
     url = "https://github.com/elm-lang/elm-repl";
-    sha256 = "1mxg99w36b8i43kl1nxp7fd86igi5wyj08m9mraiq58vpcgyqnzq";
-    rev = "95b4555cff6b6e2a55a4ea3dab00bfb39dfebf0d";
+    sha256 = "112fzykils4lqz4pc44q4mwvxg0px0zfwx511bfvblrxkwwqlfb5";
+    rev = "85f0bcfc28ea6c8a99a360d55c21ff25a556f9fe";
   };
   isLibrary = false;
   isExecutable = true;
   executableHaskellDepends = [
     base binary bytestring bytestring-trie cmdargs containers directory
-    elm-compiler elm-package filepath haskeline mtl parsec
+    elm-compiler elm-package filepath haskeline mtl parsec text
   ];
   testHaskellDepends = [
     base bytestring bytestring-trie cmdargs directory elm-compiler

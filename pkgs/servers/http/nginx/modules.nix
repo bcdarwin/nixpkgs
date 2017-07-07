@@ -15,8 +15,8 @@
     src = fetchFromGitHub {
       owner = "arut";
       repo = "nginx-rtmp-module";
-      rev = "v1.1.7";
-      sha256 = "0i0fa1znkj7cipy5nlkw4k40klhp9jzk28wxy2vrvd2jvh91x3ma";
+      rev = "v1.1.11";
+      sha256 = "09zrnf8lk179mpqnx92zm24xl7m3bq4ca84wc2zwi5hc8kxjbwxc";
     };
   };
 
@@ -28,18 +28,6 @@
       sha256 = "1qck8jclxddncjad8yv911s9z7lrd58bp96jf13m0iqk54xghx91";
     };
     inputs = [ pkgs.expat ];
-  };
-
-  syslog = rec {
-    src = fetchFromGitHub {
-      owner = "yaoweibin";
-      repo = "nginx_syslog_patch";
-      rev = "3ca5ba65541637f74467038aa032e2586321d0cb";
-      sha256 = "0y8dxkx8m1jw4v5zsvw1gfah9vh3ryq0hfmrcbjzcmwp5b5lb1i8";
-    };
-    preConfigure = ''
-      patch -p1 < "${src}/syslog-1.7.0.patch"
-    '';
   };
 
   moreheaders = {
@@ -72,8 +60,8 @@
     src = fetchFromGitHub {
       owner = "simpl";
       repo = "ngx_devel_kit";
-      rev = "v0.2.19";
-      sha256 = "1cqcasp4lc6yq5pihfcdw4vp4wicngvdc3nqg3bg52r63c1qrz76";
+      rev = "v0.3.0";
+      sha256 = "1br1997zqsjcb1aqm6h6xmi5yx7akxk0qvk8wxc0fnvmyhgzxgx0";
     };
   };
 
@@ -81,8 +69,8 @@
     src = fetchFromGitHub {
       owner = "openresty";
       repo = "lua-nginx-module";
-      rev = "v0.10.0";
-      sha256 = "0isdqrnjhfy4zlydj4csf91i9184ykazyah3i63jfrmmarxr5li1";
+      rev = "v0.10.5";
+      sha256 = "0wz5j4kqa6hk7ar42bkxp0hd74psjy6sfsldh1a6p93z349iz4v5";
     };
     inputs = [ pkgs.luajit ];
     preConfigure = ''
@@ -121,10 +109,67 @@
 
   statsd = {
     src = fetchFromGitHub {
-      owner = "zebrafishlabs";
+      owner = "apcera";
       repo = "nginx-statsd";
-      rev = "b756a12abf110b9e36399ab7ede346d4bb86d691";
-      sha256 = "1psrb5v071idlplvbnaq904nlhqw1zrbw4aawfs278zcdmq67zn8";
+      rev = "2147d61dc31dd4865604be92349e6192a905d21a";
+      sha256 = "19s3kwjgf51jkwknh7cfi82p6kifl8rl146wxc3ijds12776ilsv";
     };
   };
+
+  upstream-check = {
+    src = fetchFromGitHub {
+      owner = "yaoweibin";
+      repo = "nginx_upstream_check_module";
+      rev = "10782eaff51872a8f44e65eed89bbe286004bcb1";
+      sha256 = "0h98a8kiw2qkqfavysm1v16kf4cs4h39j583wapif4p0qx3bbm89";
+    };
+  };
+
+  # For an example usage, see https://easyengine.io/wordpress-nginx/tutorials/single-site/fastcgi-cache-with-purging/
+  fastcgi-cache-purge = {
+    src = fetchFromGitHub {
+      owner  = "FRiCKLE";
+      repo   = "ngx_cache_purge";
+      rev    = "2.3";
+      sha256 = "0ib2jrbjwrhvmihhnzkp4w87fxssbbmmmj6lfdwpm6ni8p9g60dw";
+    };
+  };
+
+  pagespeed =
+    let
+      version = pkgs.psol.version;
+
+      moduleSrc = fetchFromGitHub {
+        owner  = "pagespeed";
+        repo   = "ngx_pagespeed";
+        rev    = "v${version}-beta";
+        sha256 = "03dvzf1lgsjxcs1jjxq95n2rhgq0wy0f9ahvgascy0fak7qx4xj9";
+      };
+
+      ngx_pagespeed = pkgs.runCommand
+        "ngx_pagespeed"
+        {
+          meta = {
+            description = "PageSpeed module for Nginx";
+            homepage    = "https://developers.google.com/speed/pagespeed/module/";
+            license     = pkgs.stdenv.lib.licenses.asl20;
+          };
+        }
+        ''
+          cp -r "${moduleSrc}" "$out"
+          chmod -R +w "$out"
+          ln -s "${pkgs.psol}" "$out/psol"
+        '';
+    in {
+      src = ngx_pagespeed;
+    };
+
+    shibboleth = {
+      src = fetchFromGitHub {
+        owner = "nginx-shib";
+        repo = "nginx-http-shibboleth";
+        rev = "48b70d87bf7796d7813813a837e52b3a86e6f6f4";
+        sha256 = "0k8xcln5sf0m4r0m550dkhl07zhncp285dpysk6r4v6vqzqmhzdc";
+      };
+    };
 }

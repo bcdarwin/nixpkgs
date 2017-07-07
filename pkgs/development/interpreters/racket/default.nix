@@ -1,7 +1,7 @@
 { stdenv, fetchurl, makeFontsConf, makeWrapper
 , cairo, coreutils, fontconfig, freefont_ttf
-, glib, gmp, gtk, libffi, libjpeg, libpng
-, libtool, mpfr, openssl, pango, poppler
+, glib, gmp, gtk2, libedit, libffi, libjpeg
+, libpng, libtool, mpfr, openssl, pango, poppler
 , readline, sqlite
 , disableDocs ? true
 }:
@@ -17,7 +17,8 @@ let
     fontconfig
     glib
     gmp
-    gtk
+    gtk2
+    libedit
     libjpeg
     libpng
     mpfr
@@ -32,11 +33,11 @@ in
 
 stdenv.mkDerivation rec {
   name = "racket-${version}";
-  version = "6.5";
+  version = "6.9";
 
   src = fetchurl {
     url = "http://mirror.racket-lang.org/installers/${version}/${name}-src.tgz";
-    sha256 = "0gvh7i5k87mg1gpqk8gaq50ja9ksbhnvdqn7qqh0n17byidd6999";
+    sha256 = "1cd218ee2ba1dc683de858a866c6666eb72a11adee8d1df6cdd59c5c5a47b714";
   };
 
   FONTCONFIG_FILE = fontsConf;
@@ -79,7 +80,7 @@ stdenv.mkDerivation rec {
     '';
     homepage = http://racket-lang.org/;
     license = licenses.lgpl3;
-    maintainers = with maintainers; [ kkallio henrytill ];
-    platforms = platforms.unix;
+    maintainers = with maintainers; [ kkallio henrytill vrthra ];
+    platforms = platforms.x86_64;
   };
 }

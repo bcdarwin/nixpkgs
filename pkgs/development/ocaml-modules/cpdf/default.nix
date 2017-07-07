@@ -1,16 +1,14 @@
 { stdenv, fetchgit, ocaml, findlib, camlpdf, ncurses }:
 
-assert stdenv.lib.versionAtLeast (stdenv.lib.getVersion ocaml) "4.0";
-
-let version = "2.1.1"; in
+let version = "2.2.1"; in
 
 stdenv.mkDerivation {
-  name = "ocaml-cpdf-${version}";
+  name = "ocaml${ocaml.version}-cpdf-${version}";
 
   src = fetchgit {
     url = https://github.com/johnwhitington/cpdf-source.git;
     rev = "refs/tags/v${version}";
-    sha256 = "0c482wfa5q845k0ahx8irg1jl05ncn0kv42dg08zkph7xi6dmgnv";
+    sha256 = "1i2z417agnzzdavjfwb20r6716jl3sk5yi43ssy4jqzy6ah8x1ff";
   };
 
   buildInputs = [ ocaml findlib ncurses ];

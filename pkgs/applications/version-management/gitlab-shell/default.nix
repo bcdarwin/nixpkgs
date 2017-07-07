@@ -1,14 +1,14 @@
 { stdenv, ruby, bundler, fetchFromGitLab }:
 
 stdenv.mkDerivation rec {
-  version = "2.6.10";
+  version = "4.1.1";
   name = "gitlab-shell-${version}";
 
   srcs = fetchFromGitLab {
     owner = "gitlab-org";
     repo = "gitlab-shell";
     rev = "v${version}";
-    sha256 = "1f1ma49xpkan2iksnw9amzjdw6i0bxnzdbsk0329m7if4987vcqd";
+    sha256 = "1i7dqs0csqcjwkvg8csz5f1zxy1inrzxzz3g9j618aldqxzjfgnr";
   };
 
   buildInputs = [
@@ -56,4 +56,10 @@ stdenv.mkDerivation rec {
         " *args)"
   '';
 
+  meta = with stdenv.lib; {
+    homepage = http://www.gitlab.com/;
+    platforms = platforms.unix;
+    maintainers = with maintainers; [ fpletz ];
+    license = licenses.mit;
+  };
 }

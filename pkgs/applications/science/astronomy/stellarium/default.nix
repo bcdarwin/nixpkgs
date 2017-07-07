@@ -1,28 +1,31 @@
-{ stdenv, fetchurl, cmake, freetype, libpng, mesa, gettext, openssl, perl, libiconv
+{ mkDerivation, lib, fetchurl
+, cmake, freetype, libpng, mesa, gettext, openssl, perl, libiconv
 , qtscript, qtserialport, qttools
+, qtmultimedia
 }:
 
-stdenv.mkDerivation rec {
-  name = "stellarium-0.14.2";
+mkDerivation rec {
+  name = "stellarium-${version}";
+  version = "0.15.0";
 
   src = fetchurl {
     url = "mirror://sourceforge/stellarium/${name}.tar.gz";
-    sha256 = "1xxil0rv61zc08znfv83cpsc47y1gjl2f3njhz0pn5zd8jpaa15a";
+    sha256 = "0il751lgnfkx35h1m8fzwwnrygpxjx2a80gng1i1rbybkykf7l3l";
   };
 
+  nativeBuildInputs = [ cmake perl ];
+
   buildInputs = [
-    cmake freetype libpng mesa gettext openssl perl libiconv qtscript
-    qtserialport qttools
+    freetype libpng mesa openssl libiconv qtscript qtserialport qttools
+    qtmultimedia
   ];
 
-  enableParallelBuilding = true;
-
-  meta = {
+  meta = with lib; {
     description = "Free open-source planetarium";
     homepage = "http://stellarium.org/";
-    license = stdenv.lib.licenses.gpl2;
+    license = licenses.gpl2;
 
-    platforms = stdenv.lib.platforms.linux; # should be mesaPlatforms, but we don't have qt on darwin
-    maintainers = [ stdenv.lib.maintainers.peti ];
+    platforms = platforms.linux; # should be mesaPlatforms, but we don't have qt on darwin
+    maintainers = [ maintainers.peti ];
   };
 }

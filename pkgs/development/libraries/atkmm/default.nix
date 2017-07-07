@@ -11,6 +11,8 @@ stdenv.mkDerivation rec {
     sha256 = "ff95385759e2af23828d4056356f25376cfabc41e690ac1df055371537e458bd";
   };
 
+  outputs = [ "out" "dev" ];
+
   propagatedBuildInputs = [ atk glibmm ];
 
   nativeBuildInputs = [ pkgconfig ];
@@ -21,5 +23,6 @@ stdenv.mkDerivation rec {
     description = "C++ wrappers for ATK accessibility toolkit";
     license = stdenv.lib.licenses.lgpl21Plus;
     homepage = http://gtkmm.org;
+    platforms = stdenv.lib.platforms.unix;
   };
 }

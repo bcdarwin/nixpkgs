@@ -1,11 +1,11 @@
 { stdenv, fetchurl, autoreconfHook, pkgconfig, libzen, zlib }:
 
 stdenv.mkDerivation rec {
-  version = "0.7.84";
+  version = "0.7.95";
   name = "libmediainfo-${version}";
   src = fetchurl {
     url = "http://mediaarea.net/download/source/libmediainfo/${version}/libmediainfo_${version}.tar.xz";
-    sha256 = "0k657ynfxcw6lvakc8plz0pzfixlqbsiih2idimk9k1dd4xzhq3d";
+    sha256 = "0snrcashc5c5gcwvfh7sl7z4h523d8vxbfin3gb6g81zv43d2b23";
   };
 
   nativeBuildInputs = [ autoreconfHook pkgconfig ];

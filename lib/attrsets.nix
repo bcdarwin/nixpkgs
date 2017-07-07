@@ -1,12 +1,12 @@
 # Operations on attribute sets.
 
-with {
+let
   inherit (builtins) head tail length;
-  inherit (import ./trivial.nix) or;
+  inherit (import ./trivial.nix) and or;
   inherit (import ./default.nix) fold;
   inherit (import ./strings.nix) concatStringsSep;
   inherit (import ./lists.nix) concatMap concatLists all deepSeqList;
-};
+in
 
 rec {
   inherit (builtins) attrNames listToAttrs hasAttr isAttrs getAttr;
@@ -116,7 +116,7 @@ rec {
     listToAttrs (concatMap (name: let v = set.${name}; in if pred name v then [(nameValuePair name v)] else []) (attrNames set));
 
 
-  /* Filter an attribute set recursivelly by removing all attributes for
+  /* Filter an attribute set recursively by removing all attributes for
      which the given predicate return false.
 
      Example:
@@ -296,12 +296,17 @@ rec {
 
   /* Converts a store path to a fake derivation. */
   toDerivation = path:
-    let path' = builtins.storePath path; in
-    { type = "derivation";
-      name = builtins.unsafeDiscardStringContext (builtins.substring 33 (-1) (baseNameOf path'));
-      outPath = path';
-      outputs = [ "out" ];
-    };
+    let
+      path' = builtins.storePath path;
+      res =
+        { type = "derivation";
+          name = builtins.unsafeDiscardStringContext (builtins.substring 33 (-1) (baseNameOf path'));
+          outPath = path';
+          outputs = [ "out" ];
+          out = res;
+          outputName = "out";
+        };
+    in res;
 
 
   /* If `cond' is true, return the attribute set `as',
@@ -329,7 +334,7 @@ rec {
       value = f name (catAttrs name sets);
     }) names);
 
-  /* Implentation note: Common names  appear multiple times in the list of
+  /* Implementation note: Common names  appear multiple times in the list of
      names, hopefully this does not affect the system because the maximal
      laziness avoid computing twice the same expression and listToAttrs does
      not care about duplicated attribute names.
@@ -348,7 +353,7 @@ rec {
   zipAttrs = zipAttrsWith (name: values: values);
 
   /* Does the same as the update operator '//' except that attributes are
-     merged until the given pedicate is verified.  The predicate should
+     merged until the given predicate is verified.  The predicate should
      accept 3 arguments which are the path to reach the attribute, a part of
      the first attribute set and a part of the second attribute set.  When
      the predicate is verified, the value of the first attribute set is
@@ -386,7 +391,7 @@ rec {
       );
     in f [] [rhs lhs];
 
-  /* A recursive variant of the update operator ‘//’.  The recusion
+  /* A recursive variant of the update operator ‘//’.  The recursion
      stops when one of the attribute values is not an attribute set,
      in which case the right hand side value takes precedence over the
      left hand side value.
@@ -412,18 +417,15 @@ rec {
 
   /* Returns true if the pattern is contained in the set. False otherwise.
 
-     FIXME(zimbatm): this example doesn't work !!!
-
      Example:
-       sys = mkSystem { }
-       matchAttrs { cpu = { bits = 64; }; } sys
+       matchAttrs { cpu = {}; } { cpu = { bits = 64; }; }
        => true
    */
-  matchAttrs = pattern: attrs:
-    fold or false (attrValues (zipAttrsWithNames (attrNames pattern) (n: values:
+  matchAttrs = pattern: attrs: assert isAttrs pattern;
+    fold and true (attrValues (zipAttrsWithNames (attrNames pattern) (n: values:
       let pat = head values; val = head (tail values); in
       if length values == 1 then false
-      else if isAttrs pat then isAttrs val && matchAttrs head values
+      else if isAttrs pat then isAttrs val && matchAttrs pat val
       else pat == val
     ) [pattern attrs]));
 
@@ -454,10 +456,11 @@ rec {
   getLib = getOutput "lib";
   getDev = getOutput "dev";
 
+  /* Pick the outputs of packages to place in buildInputs */
+  chooseDevOutputs = drvs: builtins.map getDev drvs;
 
   /*** deprecated stuff ***/
 
-  deepSeqAttrs = throw "removed 2016-02-29 because unused and broken";
   zipWithNames = zipAttrsWithNames;
   zip = builtins.trace
     "lib.zip is deprecated, use lib.zipAttrsWith instead" zipAttrsWith;

@@ -9,8 +9,8 @@ stdenv.mkDerivation rec {
   };
 
   meta = with stdenv.lib; {
-    homepage = http://lbzip2.org/;
-    description = "parallel bzip2 compression utility";
+    homepage = "http://lbzip2.org/";
+    description = "Parallel bzip2 compression utility";
     license = licenses.gpl3;
     maintainers = with maintainers; [ abbradar ];
     platforms = platforms.unix;

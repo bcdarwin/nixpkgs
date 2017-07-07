@@ -3,11 +3,12 @@
 }:
 
 stdenv.mkDerivation rec {
-  name = "iproute2-4.5.0";
+  name = "iproute2-${version}";
+  version = "4.11.0";
 
   src = fetchurl {
     url = "mirror://kernel/linux/utils/net/iproute2/${name}.tar.xz";
-    sha256 = "0jj9phsi8m2sbnz7bbh9cf9vckm67hs62ab5srdwnrg4acpjj59z";
+    sha256 = "09l0phf09mw17bn3xlzfr80sbhw14mq8xv28iz5x15m6pll10rvj";
   };
 
   patches = lib.optionals enableFan [
@@ -28,7 +29,9 @@ stdenv.mkDerivation rec {
     "LIBDIR=$(out)/lib"
     "SBINDIR=$(out)/sbin"
     "MANDIR=$(out)/share/man"
+    "BASH_COMPDIR=$(out)/share/bash-completion/completions"
     "DOCDIR=$(TMPDIR)/share/doc/${name}" # Don't install docs
+    "HDRDIR=$(TMPDIR)/include/iproute2" # Don't install headers
   ];
 
   buildFlags = [
@@ -45,10 +48,10 @@ stdenv.mkDerivation rec {
   enableParallelBuilding = true;
 
   meta = with stdenv.lib; {
-    homepage = http://www.linuxfoundation.org/collaborate/workgroups/networking/iproute2;
+    homepage = https://wiki.linuxfoundation.org/networking/iproute2;
     description = "A collection of utilities for controlling TCP/IP networking and traffic control in Linux";
     platforms = platforms.linux;
     license = licenses.gpl2;
-    maintainers = with maintainers; [ eelco wkennington ];
+    maintainers = with maintainers; [ eelco wkennington fpletz ];
   };
 }

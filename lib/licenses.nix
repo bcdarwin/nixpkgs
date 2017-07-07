@@ -45,6 +45,11 @@ lib.mapAttrs (n: v: v // { shortName = n; }) rec {
     fullName = "Apple Public Source License 2.0";
   };
 
+  arphicpl = {
+    fullName = "Arphic Public License";
+    url = https://www.freedesktop.org/wiki/Arphic_Public_License/;
+  };
+
   artistic1 = spdx {
     spdxId = "Artistic-1.0";
     fullName = "Artistic License 1.0";
@@ -63,6 +68,11 @@ lib.mapAttrs (n: v: v // { shortName = n; }) rec {
   boost = spdx {
     spdxId = "BSL-1.0";
     fullName = "Boost Software License 1.0";
+  };
+
+  beerware = spdx {
+    spdxId = "Beerware";
+    fullName = ''Beerware License'';
   };
 
   bsd2 = spdx {
@@ -103,6 +113,11 @@ lib.mapAttrs (n: v: v // { shortName = n; }) rec {
   cc-by-nc-sa-40 = spdx {
     spdxId = "CC-BY-NC-SA-4.0";
     fullName = "Creative Commons Attribution Non Commercial Share Alike 4.0";
+  };
+
+  cc-by-nd-30 = spdx {
+    spdxId = "CC-BY-ND-3.0";
+    fullName = "Creative Commons Attribution-No Derivative Works v3.00";
   };
 
   cc-by-sa-25 = spdx {
@@ -181,6 +196,11 @@ lib.mapAttrs (n: v: v // { shortName = n; }) rec {
     free = false;
   };
 
+  eupl11 = spdx {
+    spdxId = "EUPL-1.1";
+    fullname = "European Union Public License 1.1";
+  };
+
   fdl12 = spdx {
     spdxId = "GFDL-1.2";
     fullName = "GNU Free Documentation License v1.2";
@@ -188,11 +208,22 @@ lib.mapAttrs (n: v: v // { shortName = n; }) rec {
 
   fdl13 = spdx {
     spdxId = "GFDL-1.3";
-    fullName = "GNU Free Documentation License v1.2";
+    fullName = "GNU Free Documentation License v1.3";
   };
 
   free = {
     fullName = "Unspecified free software license";
+  };
+
+  g4sl = {
+    fullName = "Geant4 Software License";
+    url = https://geant4.web.cern.ch/geant4/license/LICENSE.html;
+  };
+
+  geogebra = {
+    fullName = "GeoGebra Non-Commercial License Agreement";
+    url = https://www.geogebra.org/license;
+    free = false;
   };
 
   gpl1 = spdx {
@@ -331,6 +362,11 @@ lib.mapAttrs (n: v: v // { shortName = n; }) rec {
     fullName = "Lucent Public License v1.02";
   };
 
+  miros = {
+    fullname = "MirOS License";
+    url = https://opensource.org/licenses/MirOS;
+  };
+
   # spdx.org does not (yet) differentiate between the X11 and Expat versions
   # for details see http://en.wikipedia.org/wiki/MIT_License#Various_versions
   mit = spdx {
@@ -351,6 +387,11 @@ lib.mapAttrs (n: v: v // { shortName = n; }) rec {
   mpl20 = spdx {
     spdxId = "MPL-2.0";
     fullName = "Mozilla Public License 2.0";
+  };
+
+  mspl = spdx {
+    spdxId = "MS-PL";
+    fullName = "Microsoft Public License";
   };
 
   msrla = {
@@ -428,6 +469,12 @@ lib.mapAttrs (n: v: v // { shortName = n; }) rec {
     fullName = "Sleepycat License";
   };
 
+  smail = {
+    shortName = "smail";
+    fullName = "SMAIL General Public License";
+    url = http://metadata.ftp-master.debian.org/changelogs/main/d/debianutils/debianutils_4.8.1_copyright;
+  };
+
   tcltk = spdx {
     spdxId = "TCL";
     fullName = "TCL/TK License";
@@ -459,6 +506,11 @@ lib.mapAttrs (n: v: v // { shortName = n; }) rec {
     fullName = "The Unlicense";
   };
 
+  upl = {
+    fullName = "Universal Permissive License";
+    url = "https://oss.oracle.com/licenses/upl/";
+  };
+
   vim = spdx {
     spdxId = "Vim";
     fullName = "Vim License";
@@ -482,6 +534,11 @@ lib.mapAttrs (n: v: v // { shortName = n; }) rec {
   wtfpl = spdx {
     spdxId = "WTFPL";
     fullName = "Do What The F*ck You Want To Public License";
+  };
+
+  wxWindows = spdx {
+    spdxId = "WXwindows";
+    fullName = "wxWindows Library Licence, Version 3.1";
   };
 
   zlib = spdx {

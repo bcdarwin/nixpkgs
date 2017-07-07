@@ -21,6 +21,8 @@ let
           daemon reads in addition to the the user's authorized_keys file.
           You can combine the <literal>keys</literal> and
           <literal>keyFiles</literal> options.
+          Warning: If you are using <literal>NixOps</literal> then don't use this 
+          option since it will replace the key required for deployment via ssh.
         '';
       };
 
@@ -85,7 +87,7 @@ in
 
       forwardX11 = mkOption {
         type = types.bool;
-        default = cfgc.setXAuthLocation;
+        default = false;
         description = ''
           Whether to allow X11 connections to be forwarded.
         '';
@@ -102,8 +104,8 @@ in
       };
 
       permitRootLogin = mkOption {
-        default = "without-password";
-        type = types.enum ["yes" "without-password" "forced-commands-only" "no"];
+        default = "prohibit-password";
+        type = types.enum ["yes" "without-password" "prohibit-password" "forced-commands-only" "no"];
         description = ''
           Whether the root user can login using ssh.
         '';
@@ -129,7 +131,24 @@ in
       };
 
       listenAddresses = mkOption {
-        type = types.listOf types.optionSet;
+        type = with types; listOf (submodule {
+          options = {
+            addr = mkOption {
+              type = types.nullOr types.str;
+              default = null;
+              description = ''
+                Host, IPv4 or IPv6 address to listen to.
+              '';
+            };
+            port = mkOption {
+              type = types.nullOr types.int;
+              default = null;
+              description = ''
+                Port to listen to.
+              '';
+            };
+          };
+        });
         default = [];
         example = [ { addr = "192.168.3.1"; port = 22; } { addr = "0.0.0.0"; port = 64022; } ];
         description = ''
@@ -140,22 +159,6 @@ in
           NOTE: setting this option won't automatically enable given ports
           in firewall configuration.
         '';
-        options = {
-          addr = mkOption {
-            type = types.nullOr types.str;
-            default = null;
-            description = ''
-              Host, IPv4 or IPv6 address to listen to.
-            '';
-          };
-          port = mkOption {
-            type = types.nullOr types.int;
-            default = null;
-            description = ''
-              Port to listen to.
-            '';
-          };
-        };
       };
 
       passwordAuthentication = mkOption {
@@ -252,6 +255,10 @@ in
 
             preStart =
               ''
+                # Make sure we don't write to stdout, since in case of
+                # socket activation, it goes to the remote side (#19589).
+                exec >&2
+
                 mkdir -m 0755 -p /etc/ssh
 
                 ${flip concatMapStrings cfg.hostKeys (k: ''
@@ -263,15 +270,16 @@ in
 
             serviceConfig =
               { ExecStart =
+                  (optionalString cfg.startWhenNeeded "-") +
                   "${cfgc.package}/bin/sshd " + (optionalString cfg.startWhenNeeded "-i ") +
                   "-f ${pkgs.writeText "sshd_config" cfg.extraConfig}";
                 KillMode = "process";
               } // (if cfg.startWhenNeeded then {
                 StandardInput = "socket";
+                StandardError = "journal";
               } else {
                 Restart = "always";
-                Type = "forking";
-                PIDFile = "/run/sshd.pid";
+                Type = "simple";
               });
           };
       in
@@ -306,13 +314,9 @@ in
 
     services.openssh.extraConfig = mkOrder 0
       ''
-        PidFile /run/sshd.pid
-
         Protocol 2
 
         UsePAM yes
-
-        UsePrivilegeSeparation sandbox
 
         AddressFamily ${if config.networking.enableIPv6 then "any" else "inet"}
         ${concatMapStrings (port: ''

@@ -1,4 +1,4 @@
-{ stdenv, fetchFromGitHub, coreutils, qtbase, qtdeclarative, qmakeHook, texlive }:
+{ stdenv, fetchFromGitHub, coreutils, qtbase, qtdeclarative, qmake, texlive }:
 
 stdenv.mkDerivation rec {
   name = "dwarf-therapist-original-${version}";
@@ -13,7 +13,7 @@ stdenv.mkDerivation rec {
 
   outputs = [ "out" "layouts" ];
   buildInputs = [ qtbase qtdeclarative ];
-  nativeBuildInputs = [ texlive qmakeHook ];
+  nativeBuildInputs = [ texlive qmake ];
 
   enableParallelBuilding = false;
 
@@ -22,13 +22,15 @@ stdenv.mkDerivation rec {
     mkdir -p $layouts
     mv $out/share/dwarftherapist/memory_layouts/* $layouts
     rmdir $out/share/dwarftherapist/memory_layouts
+    # Useless symlink
+    rm $out/bin/dwarftherapist
   '';
 
-  meta = {
+  meta = with stdenv.lib; {
     description = "Tool to manage dwarves in in a running game of Dwarf Fortress";
-    maintainers = with stdenv.lib.maintainers; [ the-kenny abbradar ];
-    license = stdenv.lib.licenses.mit;
-    platforms = stdenv.lib.platforms.linux;
+    maintainers = with maintainers; [ the-kenny abbradar ];
+    license = licenses.mit;
+    platforms = platforms.linux;
     homepage = "https://github.com/splintermind/Dwarf-Therapist";
   };
 }

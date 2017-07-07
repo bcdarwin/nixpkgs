@@ -1,28 +1,31 @@
 { lib, stdenv, fetchurl, pkgconfig, glib, gdk_pixbuf, pango, cairo, libxml2, libgsf
-, bzip2, libcroco, libintlOrEmpty
+, bzip2, libcroco, libintlOrEmpty, darwin
 , withGTK ? false, gtk3 ? null
 , gobjectIntrospection ? null, enableIntrospection ? false }:
 
 # no introspection by default, it's too big
 
 stdenv.mkDerivation rec {
-  name = "librsvg-2.40.9";
+  name = "librsvg-2.40.17";
 
   src = fetchurl {
     url    = "mirror://gnome/sources/librsvg/2.40/${name}.tar.xz";
-    sha256 = "0fplymmqqr28y24vcnb01szn62pfbqhk8p1ngns54x9m6mflr5hk";
+    sha256 = "1k39gyf7f5m9x0jvpcxvfcqswdb04xhm1lbwbjabn1f4xk5wbxp6";
   };
 
   NIX_LDFLAGS = if stdenv.isDarwin then "-lintl" else null;
 
-  outputs = [ "dev" "out" ];
+  outputs = [ "out" "dev" ];
 
   buildInputs = [ libxml2 libgsf bzip2 libcroco pango libintlOrEmpty ]
-    ++ stdenv.lib.optional enableIntrospection [ gobjectIntrospection ];
+    ++ stdenv.lib.optional enableIntrospection gobjectIntrospection;
 
   propagatedBuildInputs = [ glib gdk_pixbuf cairo ] ++ lib.optional withGTK gtk3;
 
-  nativeBuildInputs = [ pkgconfig ];
+  nativeBuildInputs = [ pkgconfig ]
+    ++ lib.optionals stdenv.isDarwin (with darwin.apple_sdk.frameworks; [
+      ApplicationServices
+    ]);
 
   configureFlags = [ "--enable-introspection=auto" ]
     ++ stdenv.lib.optional stdenv.isDarwin "--disable-Bsymbolic";
@@ -52,4 +55,8 @@ stdenv.mkDerivation rec {
     cat ${gdk_pixbuf.out}/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache $GDK_PIXBUF/loaders.cache.tmp > $GDK_PIXBUF/loaders.cache
     rm $GDK_PIXBUF/loaders.cache.tmp
   '';
+
+  meta = {
+    platforms = stdenv.lib.platforms.unix;
+  };
 }

@@ -1,17 +1,24 @@
-{ stdenv, fetchurl, noSysDirs, zlib
-, cross ? null, gold ? true, bison ? null
+{ stdenv, buildPackages
+, fetchurl, zlib
+, buildPlatform, hostPlatform, targetPlatform
+, noSysDirs, gold ? true, bison ? null
 }:
 
-let basename = "binutils-2.26"; in
-
-with { inherit (stdenv.lib) optional optionals optionalString; };
+let
+  version = "2.28";
+  basename = "binutils-${version}";
+  inherit (stdenv.lib) optional optionals optionalString;
+  # The prefix prepended to binary names to allow multiple binuntils on the
+  # PATH to both be usable.
+  prefix = optionalString (targetPlatform != hostPlatform) "${targetPlatform.config}-";
+in
 
 stdenv.mkDerivation rec {
-  name = basename + optionalString (cross != null) "-${cross.config}";
+  name = prefix + basename;
 
   src = fetchurl {
     url = "mirror://gnu/binutils/${basename}.tar.bz2";
-    sha256 = "1ngc2h3knhiw8s22l8y6afycfaxr5grviqy7mwvm4bsl14cf9b62";
+    sha256 = "0wiasgns7i8km8nrxas265sh2dfpsw93b3qw195ipc90w4z475v2";
   };
 
   patches = [
@@ -33,19 +40,27 @@ stdenv.mkDerivation rec {
     # PaX-marked to disable mprotect doesn't fail with permission denied.
     ./pt-pax-flags.patch
 
-    # Bug fix backported from binutils master.
-    ./fix-bsymbolic.patch
-
-   # Bug fix backported from binutils master.
-    ./fix-update-symbol-version.patch
+    # Bfd looks in BINDIR/../lib for some plugins that don't
+    # exist. This is pointless (since users can't install plugins
+    # there) and causes a cycle between the lib and bin outputs, so
+    # get rid of it.
+    ./no-plugins.patch
   ];
 
-  outputs = (optional (cross == null) "dev") ++ [ "out" "info" ];
+  # TODO: all outputs on all platform
+  outputs = [ "out" ]
+    ++ optional (targetPlatform == hostPlatform && !hostPlatform.isDarwin) "lib" # problems in Darwin stdenv
+    ++ [ "info" ]
+    ++ optional (targetPlatform == hostPlatform) "dev";
 
-  nativeBuildInputs = [ bison ];
+  nativeBuildInputs = [ bison ]
+    ++ optional (hostPlatform != buildPlatform) buildPackages.stdenv.cc;
   buildInputs = [ zlib ];
 
   inherit noSysDirs;
+
+  # FIXME needs gcc 4.9 in bootstrap tools
+  hardeningDisable = [ "stackprotector" ];
 
   preConfigure = ''
     # Clear the default library search path.
@@ -62,20 +77,23 @@ stdenv.mkDerivation rec {
 
   # As binutils takes part in the stdenv building, we don't want references
   # to the bootstrap-tools libgcc (as uses to happen on arm/mips)
-  NIX_CFLAGS_COMPILE = if stdenv.isDarwin
+  NIX_CFLAGS_COMPILE = if hostPlatform.isDarwin
     then "-Wno-string-plus-int -Wno-deprecated-declarations"
     else "-static-libgcc";
 
+  # TODO(@Ericson2314): Always pass "--target" and always prefix.
+  configurePlatforms = [ "build" "host" ] ++ stdenv.lib.optional (targetPlatform != hostPlatform) "target";
   configureFlags =
     [ "--enable-shared" "--enable-deterministic-archives" "--disable-werror" ]
     ++ optional (stdenv.system == "mips64el-linux") "--enable-fix-loongson2f-nop"
-    ++ optional (cross != null) "--target=${cross.config}"
     ++ optionals gold [ "--enable-gold" "--enable-plugins" ]
     ++ optional (stdenv.system == "i686-linux") "--enable-targets=x86_64-linux-gnu";
 
   enableParallelBuilding = true;
 
-  postFixup = optionalString (cross == null) "ln -s $out/bin $dev/bin"; # tools needed for development
+  passthru = {
+    inherit prefix;
+  };
 
   meta = with stdenv.lib; {
     description = "Tools for manipulating binaries (linker, assembler, etc.)";
@@ -91,6 +109,6 @@ stdenv.mkDerivation rec {
 
     /* Give binutils a lower priority than gcc-wrapper to prevent a
        collision due to the ld/as wrappers/symlinks in the latter. */
-    priority = "10";
+    priority = 10;
   };
 }

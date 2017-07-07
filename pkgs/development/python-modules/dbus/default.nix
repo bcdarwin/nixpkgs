@@ -1,8 +1,11 @@
-{ stdenv, fetchurl, python, pkgconfig, dbus, dbus_glib, dbus_tools, isPyPy
-, ncurses }:
+{ lib, fetchurl, buildPythonPackage, python, pkgconfig, dbus, dbus_glib, dbus_tools, isPyPy
+, ncurses, pygobject3 }:
 
-if isPyPy then throw "dbus-python not supported for interpreter ${python.executable}" else stdenv.mkDerivation rec {
-  name = "dbus-python-1.2.4";
+if isPyPy then throw "dbus-python not supported for interpreter ${python.executable}" else buildPythonPackage rec {
+  pname = "dbus-python";
+  version = "1.2.4";
+  name = "${pname}-${version}";
+  format = "other";
 
   src = fetchurl {
     url = "http://dbus.freedesktop.org/releases/dbus-python/${name}.tar.gz";
@@ -11,21 +14,17 @@ if isPyPy then throw "dbus-python not supported for interpreter ${python.executa
 
   postPatch = "patchShebangs .";
 
-  buildInputs = [ python pkgconfig dbus dbus_glib ]
-    ++ stdenv.lib.optional doCheck dbus_tools
+  buildInputs = [ pkgconfig dbus dbus_glib ]
+    ++ lib.optionals doCheck [ dbus_tools pygobject3 ]
     # My guess why it's sometimes trying to -lncurses.
     # It seems not to retain the dependency anyway.
-    ++ stdenv.lib.optional (! python ? modules) ncurses;
+    ++ lib.optional (! python ? modules) ncurses;
 
   doCheck = true;
 
-  # Set empty pythonPath, so that the package is recognized as a python package
-  # for python.buildEnv
-  pythonPath = [];
-
   meta = {
     description = "Python DBus bindings";
-    license = stdenv.lib.licenses.mit;
+    license = lib.licenses.mit;
     platforms = dbus.meta.platforms;
   };
 }

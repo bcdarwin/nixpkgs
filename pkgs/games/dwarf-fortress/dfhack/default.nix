@@ -1,20 +1,28 @@
 { stdenv, fetchgit, cmake, writeScriptBin
 , perl, XMLLibXML, XMLLibXSLT
 , zlib
-, jsoncpp, protobuf, tinyxml
 }:
 
 let
-  dfVersion = "0.42.06";
+  dfVersion = "0.43.05";
+  # version = "${dfVersion}-r1";
+  # rev = "refs/tags/${version}";
   version = "${dfVersion}-r1";
   rev = "refs/tags/${version}";
+  sha256 = "1hw0miimzx52p36jm9bimsm5j68rb7dd9kw0yivcwbwixbajsi1w";
+
   # revision of library/xml submodule
-  xmlRev = "98cc1e01886aaea161d651cf97229ad08e9782b0";
+  xmlRev = "a8e80088b9cc934da993dc244ece2d0ae14143da";
+
+  arch =
+    if stdenv.system == "x86_64-linux" then "64"
+    else if stdenv.system == "i686-linux" then "32"
+    else throw "Unsupported architecture";
 
   fakegit = writeScriptBin "git" ''
     #! ${stdenv.shell}
     if [ "$*" = "describe --tags --long" ]; then
-      echo "${dfVersion}-unknown"
+      echo "${version}-unknown"
     elif [ "$*" = "rev-parse HEAD" ]; then
       if [ "$(dirname "$(pwd)")" = "xml" ]; then
         echo "${xmlRev}"
@@ -34,25 +42,30 @@ in stdenv.mkDerivation rec {
   # Beware of submodules
   src = fetchgit {
     url = "https://github.com/DFHack/dfhack";
-    inherit rev;
-    sha256 = "0h9y9z4d9lirgpcvj5r2znmfi2avdrgrffi9p63gxp1a3mv9fdm1";
+    inherit rev sha256;
   };
 
-  patches = [ ./use-system-libraries.patch ];
+  patches = [ ./skip-ruby.patch ];
 
   nativeBuildInputs = [ cmake perl XMLLibXML XMLLibXSLT fakegit ];
-  # we can't use native Lua; upstream uses private headers
-  buildInputs = [ zlib jsoncpp protobuf tinyxml ];
+  # We don't use system libraries because dfhack needs old C++ ABI.
+  buildInputs = [ zlib ];
+
+  preBuild = ''
+    export LD_LIBRARY_PATH="$PWD/depends/protobuf:$LD_LIBRARY_PATH"
+  '';
+
+  cmakeFlags = [ "-DDFHACK_BUILD_ARCH=${arch}" ];
 
   enableParallelBuilding = true;
 
-  passthru = { inherit dfVersion; };
+  passthru = { inherit version dfVersion; };
 
   meta = with stdenv.lib; {
     description = "Memory hacking library for Dwarf Fortress and a set of tools that use it";
     homepage = "https://github.com/DFHack/dfhack/";
     license = licenses.zlib;
-    platforms = [ "i686-linux" ];
+    platforms = [ "x86_64-linux" "i686-linux" ];
     maintainers = with maintainers; [ robbinch a1russell abbradar ];
   };
 }

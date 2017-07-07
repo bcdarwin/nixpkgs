@@ -2,14 +2,14 @@
 
 let
   bootstrap = fetchurl {
-    url = "https://d3sqy0vbqsdhku.cloudfront.net/packages-bootstrap/1.2.0.1/meteor-bootstrap-os.linux.x86_64.tar.gz";
-    sha256 = "0jc516qyig7f5a8ns4y6d9031f0ww2sd90n837kz6x97nin7655s";
+    url = "https://meteorinstall-4168.kxcdn.com/packages-bootstrap/1.4.2.3/meteor-bootstrap-os.linux.x86_64.tar.gz";
+    sha256 = "1x5dp8y731qai882ghy3337844lc686r15a4dd9wjx2zvy7wmwhz";
   };
 in
 
 stdenv.mkDerivation rec {
   name = "meteor-${version}";
-  version = "1.2.0.1";
+  version = "1.4.2.3";
 
   dontStrip = true;
 
@@ -40,7 +40,7 @@ stdenv.mkDerivation rec {
     popd
     substituteInPlace $out/tools/cli/main.js \
       --replace "@INTERPRETER@" "$(cat $NIX_CC/nix-support/dynamic-linker)" \
-      --replace "@RPATH@" "${stdenv.cc.cc.lib}/lib:${zlib.out}/lib" \
+      --replace "@RPATH@" "${lib.makeLibraryPath [ stdenv.cc.cc zlib ]}" \
       --replace "@PATCHELF@" "${patchelf}/bin/patchelf"
 
     # Patch node.
@@ -54,7 +54,7 @@ stdenv.mkDerivation rec {
     for p in $devBundle/mongodb/bin/mongo{,d}; do
       patchelf \
         --set-interpreter $(cat $NIX_CC/nix-support/dynamic-linker) \
-        --set-rpath "$(patchelf --print-rpath $p):${stdenv.cc.cc.lib}/lib:${zlib.out}/lib" \
+        --set-rpath "$(patchelf --print-rpath $p):${lib.makeLibraryPath [ stdenv.cc.cc zlib ]}" \
         $p
     done
 
@@ -62,7 +62,7 @@ stdenv.mkDerivation rec {
     for p in $(find $out/packages -name '*.node'); do
       patchelf \
         --set-rpath "$(patchelf --print-rpath $p):${stdenv.cc.cc.lib}/lib" \
-        $p
+        $p || true
     done
 
     # Meteor needs an initial package-metadata in $HOME/.meteor,

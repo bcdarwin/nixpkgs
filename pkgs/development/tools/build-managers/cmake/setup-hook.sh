@@ -49,7 +49,7 @@ cmakeConfigurePhase() {
 
     # Avoid cmake resetting the rpath of binaries, on make install
     # And build always Release, to ensure optimisation flags
-    cmakeFlags="-DCMAKE_BUILD_TYPE=Release -DCMAKE_SKIP_BUILD_RPATH=ON $cmakeFlags"
+    cmakeFlags="-DCMAKE_BUILD_TYPE=${cmakeBuildType:-Release} -DCMAKE_SKIP_BUILD_RPATH=ON $cmakeFlags"
 
     echo "cmake flags: $cmakeFlags ${cmakeFlagsArray[@]}"
 
@@ -70,15 +70,25 @@ else
 fi
 
 makeCmakeFindLibs(){
+  isystem_seen=
   for flag in $NIX_CFLAGS_COMPILE $NIX_LDFLAGS; do
-    case $flag in
-      -I*)
-        export CMAKE_INCLUDE_PATH="$CMAKE_INCLUDE_PATH${CMAKE_INCLUDE_PATH:+:}${flag:2}"
-        ;;
-      -L*)
-        export CMAKE_LIBRARY_PATH="$CMAKE_LIBRARY_PATH${CMAKE_LIBRARY_PATH:+:}${flag:2}"
-        ;;
-    esac
+    if test -n "$isystem_seen" && test -d "$flag"; then
+      isystem_seen=
+      export CMAKE_INCLUDE_PATH="$CMAKE_INCLUDE_PATH${CMAKE_INCLUDE_PATH:+:}${flag}"
+    else
+      isystem_seen=
+      case $flag in
+        -I*)
+          export CMAKE_INCLUDE_PATH="$CMAKE_INCLUDE_PATH${CMAKE_INCLUDE_PATH:+:}${flag:2}"
+          ;;
+        -L*)
+          export CMAKE_LIBRARY_PATH="$CMAKE_LIBRARY_PATH${CMAKE_LIBRARY_PATH:+:}${flag:2}"
+          ;;
+        -isystem)
+          isystem_seen=1
+          ;;
+      esac
+    fi
   done
 }
 

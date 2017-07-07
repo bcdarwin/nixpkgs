@@ -8,8 +8,6 @@ stdenv.mkDerivation rec {
     sha256 = "172ybxg720r64hp6aah0hqvxklqv1cf8v7kwx0ng5ap0h20jydbw";
   };
 
-  cmakeFlags = [ "-DCMAKE_BUILD_TYPE=Release" ];
-
   buildInputs = [ qt4 zlib bzip2 ];
 
   nativeBuildInputs = [ cmake pkgconfig ];
@@ -17,14 +15,14 @@ stdenv.mkDerivation rec {
   enableParallelBuilding = true;
 
   patchPhase = ''
-    sed -e 's#/usr/share/applications#$out/share/applications#' -i src/core/CMakeLists.txt
+    substituteInPlace src/core/CMakeLists.txt --replace /usr/share/applications "$out"/share/applications
   '';
 
-  meta = {
+  meta = with stdenv.lib; {
     homepage = http://doomseeker.drdteam.org/;
     description = "Multiplayer server browser for many Doom source ports";
-    license = stdenv.lib.licenses.gpl2;
-    platforms = stdenv.lib.platforms.unix;
-    maintainers = with stdenv.lib.maintainers; [ MP2E ];
+    license = licenses.gpl2;
+    platforms = platforms.unix;
+    maintainers = [ maintainers.MP2E ];
   };
 }

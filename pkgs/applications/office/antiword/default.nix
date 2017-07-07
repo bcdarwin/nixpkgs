@@ -11,8 +11,9 @@ stdenv.mkDerivation {
     sha256 = "1b7mi1l20jhj09kyh0bq14qzz8vdhhyf35gzwsq43mn6rc7h0b4f";
   };
 
-  preInstall = ''
+  prePatch = ''
     sed -i -e "s|/usr/local/bin|$out/bin|g" -e "s|/usr/share|$out/share|g" Makefile antiword.h
+    substituteInPlace Makefile --replace "gcc" "cc"
   '';
 
   patches = [ ./10_fix_buffer_overflow_wordole_c.patch ];
@@ -25,6 +26,6 @@ stdenv.mkDerivation {
     license = stdenv.lib.licenses.gpl2;
 
     maintainers = [ stdenv.lib.maintainers.peti ];
-    platforms = stdenv.lib.platforms.linux;
+    platforms = with stdenv.lib.platforms; linux ++ darwin;
   };
 }

@@ -1,8 +1,8 @@
-{ stdenv, fetchFromGitHub, pkgconfig, python, makeWrapper
-, bash, libsamplerate, libsndfile, readline
+{ stdenv, fetchFromGitHub, pkgconfig, python2Packages, makeWrapper
+, bash, libsamplerate, libsndfile, readline, eigen, celt
 
 # Optional Dependencies
-, dbus ? null, pythonDBus ? null, libffado ? null, alsaLib ? null
+, dbus ? null, libffado ? null, alsaLib ? null
 , libopus ? null
 
 # Extra options
@@ -11,41 +11,36 @@
 
 with stdenv.lib;
 let
+  inherit (python2Packages) python dbus-python;
   shouldUsePkg = pkg: if pkg != null && stdenv.lib.any (x: x == stdenv.system) pkg.meta.platforms then pkg else null;
 
   libOnly = prefix == "lib";
 
   optDbus = shouldUsePkg dbus;
-  optPythonDBus = if libOnly then null else shouldUsePkg pythonDBus;
+  optPythonDBus = if libOnly then null else shouldUsePkg dbus-python;
   optLibffado = if libOnly then null else shouldUsePkg libffado;
   optAlsaLib = if libOnly then null else shouldUsePkg alsaLib;
   optLibopus = shouldUsePkg libopus;
 in
 stdenv.mkDerivation rec {
   name = "${prefix}jack2-${version}";
-  version = "1.9.10";
+  version = "1.9.11-RC1";
 
   src = fetchFromGitHub {
     owner = "jackaudio";
     repo = "jack2";
     rev = "v${version}";
-    sha256 = "1a2213l7x6sgqg2hq3yhnpvvvqyskhsmx8j3z0jgjsqwz9xa3wbr";
+    sha256 = "0i708ar3ll5p8yj0h7ffg84nrn49ap47l2yy75rxyw30cyywhxp4";
   };
 
   nativeBuildInputs = [ pkgconfig python makeWrapper ];
-  buildInputs = [
-    python
-
-    libsamplerate libsndfile readline
-
+  buildInputs = [ python libsamplerate libsndfile readline eigen celt
     optDbus optPythonDBus optLibffado optAlsaLib optLibopus
   ];
 
-  prePatch = ''
+  patchPhase = ''
     substituteInPlace svnversion_regenerate.sh --replace /bin/bash ${bash}/bin/bash
   '';
-
-  patches = [ ./jack-gcc5.patch ];
 
   configurePhase = ''
     python waf configure --prefix=$out \

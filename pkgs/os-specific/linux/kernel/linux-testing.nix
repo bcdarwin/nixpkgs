@@ -1,19 +1,18 @@
-{ stdenv, fetchurl, perl, buildLinux, ... } @ args:
+{ stdenv, hostPlatform, fetchurl, perl, buildLinux, ... } @ args:
 
 import ./generic.nix (args // rec {
-  version = "4.6-rc6";
-  modDirVersion = "4.6.0-rc6";
-  extraMeta.branch = "4.6";
+  version = "4.12-rc7";
+  modDirVersion = "4.12.0-rc7";
+  extraMeta.branch = "4.12";
 
   src = fetchurl {
-    url = "mirror://kernel/linux/kernel/v4.x/testing/linux-${version}.tar.xz";
-    sha256 = "040sk87zdgqsbma5sk1hk4graga8yafh4rn89vkznkwzdlwa3gyx";
+    url = "https://git.kernel.org/torvalds/t/linux-${version}.tar.gz";
+    sha256 = "1svfswv0b4gagv1yiavwb22p726h0w81lgxjqq0h9m3gf4xlqp3x";
   };
 
   features.iwlwifi = true;
   features.efiBootStub = true;
   features.needsCifsUtils = true;
-  features.canDisableNetfilterConntrackHelpers = true;
   features.netfilterRPFilter = true;
 
   # Should the testing kernels ever be built on Hydra?

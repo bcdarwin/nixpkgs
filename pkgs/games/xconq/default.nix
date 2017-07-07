@@ -3,9 +3,9 @@
 
 stdenv.mkDerivation rec {
   name = "${baseName}-${version}";
-  baseName="xconq";
+  baseName = "xconq";
   version = "7.5.0-0pre.0.20050612";
-  
+
   src = fetchurl {
     url = "mirror://sourceforge/project/${baseName}/${baseName}/${name}/${name}.tar.gz";
     sha256 = "1za78yx57mgwcmmi33wx3533yz1x093dnqis8q2qmqivxav51lca";
@@ -20,10 +20,14 @@ stdenv.mkDerivation rec {
     "--with-tkconfig=${tk}/lib"
   ];
 
+  hardeningDisable = [ "format" ];
+
   patchPhase = ''
     # Fix Makefiles
     find . -name 'Makefile.in' -exec sed -re 's@^        ( *)(cd|[&][&])@	\1\2@' -i '{}' ';'
     find . -name 'Makefile.in' -exec sed -e '/chown/d; /chgrp/d' -i '{}' ';'
+    # do not set sticky bit in nix store
+    find . -name 'Makefile.in' -exec sed -e 's/04755/755/g' -i '{}' ';'
     sed -e '/^			* *[$][(]tcltkdir[)]\/[*][.][*]/d' -i tcltk/Makefile.in
 
     # Fix C files

@@ -33,6 +33,26 @@ in
         default = false;
         description = "Don't install XFCE desktop components (xfdesktop, panel and notification daemon).";
       };
+
+      extraSessionCommands = mkOption {
+        default = "";
+        type = types.lines;
+        description = ''
+          Shell commands executed just before XFCE is started.
+        '';
+      };
+
+      enableXfwm = mkOption {
+        type = types.bool;
+        default = true;
+        description = "Enable the XFWM (default) window manager.";
+      };
+
+      screenLock = mkOption {
+        type = types.enum [ "xscreensaver" "xlockmore" "slock" ];
+        default = "xlockmore";
+        description = "Application used by XFCE to lock the screen.";
+      };
     };
 
   };
@@ -45,6 +65,8 @@ in
         bgSupport = true;
         start =
           ''
+            ${cfg.extraSessionCommands}
+
             # Set GTK_PATH so that GTK+ can find the theme engines.
             export GTK_PATH="${config.system.path}/lib/gtk-2.0:${config.system.path}/lib/gtk-3.0"
 
@@ -59,11 +81,12 @@ in
     services.xserver.updateDbusEnvironment = true;
 
     environment.systemPackages =
-      [ pkgs.gtk # To get GTK+'s themes.
+      [ pkgs.gtk2.out # To get GTK+'s themes and gtk-update-icon-cache
         pkgs.hicolor_icon_theme
         pkgs.tango-icon-theme
         pkgs.shared_mime_info
         pkgs.which # Needed by the xfce's xinitrc script.
+        pkgs."${cfg.screenLock}"
         pkgs.xfce.exo
         pkgs.xfce.gtk_xfce_engine
         pkgs.xfce.mousepad
@@ -77,7 +100,6 @@ in
         pkgs.xfce.xfce4volumed
         pkgs.xfce.xfce4-screenshooter
         pkgs.xfce.xfconf
-        pkgs.xfce.xfwm4
         # This supplies some "abstract" icons such as
         # "utilities-terminal" and "accessories-text-editor".
         pkgs.gnome3.defaultIconTheme
@@ -89,7 +111,9 @@ in
         pkgs.xfce.xfce4_appfinder
         pkgs.xfce.tumbler       # found via dbus
       ]
+      ++ optional cfg.enableXfwm pkgs.xfce.xfwm4
       ++ optional config.powerManagement.enable pkgs.xfce.xfce4_power_manager
+      ++ optional config.networking.networkmanager.enable pkgs.networkmanagerapplet
       ++ optionals (!cfg.noDesktop)
          [ pkgs.xfce.xfce4panel
            pkgs.xfce.xfdesktop

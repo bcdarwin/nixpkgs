@@ -47,7 +47,7 @@ stdenv.mkDerivation {
     "-DCMAKE_BUILD_TYPE='Release'"
     "-DENABLE_FFMPEG='true'"
     #"-DENABLE_LINK='true'" currently broken :/
-    "-DSYSCONFDIR='$out/etc'"
+    "-DSYSCONFDIR=etc"
   ];
 
   meta = {
@@ -55,5 +55,6 @@ stdenv.mkDerivation {
     license = stdenv.lib.licenses.gpl2;
     maintainers = [ stdenv.lib.maintainers.lassulus ];
     homepage = http://vba-m.com/;
+    platforms = stdenv.lib.platforms.linux;
   };
 }

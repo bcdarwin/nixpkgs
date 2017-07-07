@@ -1,26 +1,31 @@
-{ lib, stdenv, fetchurl
+{ lib, stdenv, fetchurl, pkgconfig
 
+, abiVersion
 , mouseSupport ? false
 , unicode ? true
 
 , gpm
 
-# Extra Options
-, abiVersion ? "5"
+, buildPlatform, hostPlatform
+, buildPackages
 }:
-
+let
+  version = if abiVersion == "5" then "5.9" else "6.0";
+  sha256 = if abiVersion == "5"
+    then "0fsn7xis81za62afan0vvm38bvgzg5wfmv1m86flqcj0nj7jjilh"
+    else "0q3jck7lna77z5r42f13c4xglc7azd19pxfrjrpgp2yf615w4lgm";
+in
 stdenv.mkDerivation rec {
-  name = "ncurses-5.9";
+  name = "ncurses-${version}";
 
   src = fetchurl {
     url = "mirror://gnu/ncurses/${name}.tar.gz";
-    sha256 = "0fsn7xis81za62afan0vvm38bvgzg5wfmv1m86flqcj0nj7jjilh";
+    inherit sha256;
   };
 
-  # gcc-5.patch should be removed after 5.9
-  patches = [ ./clang.patch ./gcc-5.patch ];
+  patches = [ ./clang.patch ] ++ lib.optional (abiVersion == "5" && stdenv.cc.isGNU) ./gcc-5.patch;
 
-  outputs = [ "dev" "out" "man" ];
+  outputs = [ "out" "dev" "man" ];
   setOutputFlags = false; # some aren't supported
 
   configureFlags = [
@@ -33,9 +38,17 @@ stdenv.mkDerivation rec {
   # Only the C compiler, and explicitly not C++ compiler needs this flag on solaris:
   CFLAGS = lib.optionalString stdenv.isSunOS "-D_XOPEN_SOURCE_EXTENDED";
 
+  nativeBuildInputs = [
+    pkgconfig
+  ] ++ lib.optionals (buildPlatform != hostPlatform) [
+    buildPackages.ncurses buildPackages.stdenv.cc
+  ];
   buildInputs = lib.optional (mouseSupport && stdenv.isLinux) gpm;
 
   preConfigure = ''
+    # These paths end up in the default lookup chain.
+    export TERMINFO_DIRS=/etc/terminfo
+
     export PKG_CONFIG_LIBDIR="$dev/lib/pkgconfig"
     mkdir -p "$PKG_CONFIG_LIBDIR"
     configureFlagsArray+=(
@@ -51,11 +64,7 @@ stdenv.mkDerivation rec {
            -e '/CPPFLAGS="$CPPFLAGS/s/ -D_XOPEN_SOURCE_EXTENDED//' \
         configure
     CFLAGS=-D_XOPEN_SOURCE_EXTENDED
-  '' + lib.optionalString stdenv.isCygwin ''
-    sed -i -e 's,LIB_SUFFIX="t,LIB_SUFFIX=",' configure
   '';
-
-  selfNativeBuildInput = true;
 
   enableParallelBuilding = true;
 
@@ -88,6 +97,12 @@ stdenv.mkDerivation rec {
           if [ -e "$out/lib/lib''${library}$suffix.$dylibtype" ]; then
             ln -svf lib''${library}$suffix.$dylibtype $out/lib/lib$library$newsuffix.$dylibtype
             ln -svf lib''${library}$suffix.$dylibtype.${abiVersion} $out/lib/lib$library$newsuffix.$dylibtype.${abiVersion}
+            if [ "ncurses" = "$library" ]
+            then
+              # make libtinfo symlinks
+              ln -svf lib''${library}$suffix.$dylibtype $out/lib/libtinfo$newsuffix.$dylibtype
+              ln -svf lib''${library}$suffix.$dylibtype.${abiVersion} $out/lib/libtinfo$newsuffix.$dylibtype.${abiVersion}
+            fi
           fi
         done
         for statictype in a dll.a la; do
@@ -108,7 +123,7 @@ stdenv.mkDerivation rec {
     moveToOutput "bin/tset" "$out"
   '';
 
-  preFixup = ''
+  preFixup = lib.optionalString (!hostPlatform.isCygwin) ''
     rm "$out"/lib/*.a
   '';
 

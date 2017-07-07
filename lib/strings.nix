@@ -16,11 +16,7 @@ rec {
        concatStrings ["foo" "bar"]
        => "foobar"
   */
-  concatStrings =
-    if builtins ? concatStringsSep then
-      builtins.concatStringsSep ""
-    else
-      lib.foldl' (x: y: x + y) "";
+  concatStrings = builtins.concatStringsSep "";
 
   /* Map a function over a list and concatenate the resulting strings.
 
@@ -37,7 +33,7 @@ rec {
        concatImapStrings (pos: x: "${toString pos}-${x}") ["foo" "bar"]
        => "1-foo2-bar"
   */
-  concatImapStrings = f: list: concatStrings (lib.imap f list);
+  concatImapStrings = f: list: concatStrings (lib.imap1 f list);
 
   /* Place an element between each element of a list
 
@@ -74,7 +70,7 @@ rec {
        concatImapStringsSep "-" (pos: x: toString (x / pos)) [ 6 6 6 ]
        => "6-3-2"
   */
-  concatImapStringsSep = sep: f: list: concatStringsSep sep (lib.imap f list);
+  concatImapStringsSep = sep: f: list: concatStringsSep sep (lib.imap1 f list);
 
   /* Construct a Unix-style search path consisting of each `subDir"
      directory of the given list of packages.
@@ -130,8 +126,8 @@ rec {
   */
   makePerlPath = makeSearchPathOutput "lib" "lib/perl5/site_perl";
 
-  /* Dependening on the boolean `cond', return either the given string
-     or the empty string. Useful to contatenate against a bigger string.
+  /* Depending on the boolean `cond', return either the given string
+     or the empty string. Useful to concatenate against a bigger string.
 
      Example:
        optionalString true "some-string"
@@ -160,12 +156,12 @@ rec {
        hasSuffix "foo" "barfoo"
        => true
   */
-  hasSuffix = suff: str:
+  hasSuffix = suffix: content:
     let
-      lenStr = stringLength str;
-      lenSuff = stringLength suff;
-    in lenStr >= lenSuff &&
-       substring (lenStr - lenSuff) lenStr str == suff;
+      lenContent = stringLength content;
+      lenSuffix = stringLength suffix;
+    in lenContent >= lenSuffix &&
+       substring (lenContent - lenSuffix) lenContent content == suffix;
 
   /* Convert a string to a list of characters (i.e. singleton strings).
      This allows you to, e.g., map a function over each character.  However,
@@ -207,13 +203,21 @@ rec {
   */
   escape = list: replaceChars list (map (c: "\\${c}") list);
 
-  /* Escape all characters that have special meaning in the Bourne shell.
+  /* Quote string to be used safely within the Bourne shell.
 
      Example:
-       escapeShellArg "so([<>])me"
-       => "so\\(\\[\\<\\>\\]\\)me"
+       escapeShellArg "esc'ape\nme"
+       => "'esc'\\''ape\nme'"
   */
-  escapeShellArg = lib.escape (stringToCharacters "\\ ';$`()|<>\t*[]");
+  escapeShellArg = arg: "'${replaceStrings ["'"] ["'\\''"] (toString arg)}'";
+
+  /* Quote all arguments to be safely passed to the Bourne shell.
+
+     Example:
+       escapeShellArgs ["one" "two three" "four'five"]
+       => "'one' 'two three' 'four'\\''five'"
+  */
+  escapeShellArgs = concatMapStringsSep " " escapeShellArg;
 
   /* Obsolete - use replaceStrings instead. */
   replaceChars = builtins.replaceStrings or (
@@ -244,7 +248,7 @@ rec {
   /* Converts an ASCII string to upper-case.
 
      Example:
-       toLower "home"
+       toUpper "home"
        => "HOME"
   */
   toUpper = replaceChars lowerChars upperChars;
@@ -287,7 +291,7 @@ rec {
 
       recurse = index: startAt:
         let cutUntil = i: [(substring startAt (i - startAt) s)]; in
-        if index < lastSearch then
+        if index <= lastSearch then
           if startWithSep index then
             let restartAt = index + sepLen; in
             cutUntil index ++ recurse restartAt restartAt
@@ -368,7 +372,12 @@ rec {
        getVersion pkgs.youtube-dl
        => "2016.01.01"
   */
-  getVersion = x: (builtins.parseDrvName (x.name or x)).version;
+  getVersion = x:
+   let
+     parse = drv: (builtins.parseDrvName drv).version;
+   in if isString x
+      then parse x
+      else x.version or (parse x.name);
 
   /* Extract name with version from URL. Ask for separator which is
      supposed to start extension.
@@ -429,8 +438,13 @@ rec {
        => true
        isStorePath pkgs.python
        => true
+       isStorePath [] || isStorePath 42 || isStorePath {} || …
+       => false
   */
-  isStorePath = x: builtins.substring 0 1 (toString x) == "/" && dirOf (builtins.toPath x) == builtins.storeDir;
+  isStorePath = x:
+       builtins.isString x
+    && builtins.substring 0 1 (toString x) == "/"
+    && dirOf (builtins.toPath x) == builtins.storeDir;
 
   /* Convert string to int
      Obviously, it is a bit hacky to use fromJSON that way.
@@ -467,12 +481,20 @@ rec {
   readPathsFromFile = rootPath: file:
     let
       root = toString rootPath;
-      lines =
-        builtins.map (lib.removeSuffix "\n")
-        (lib.splitString "\n" (builtins.readFile file));
-      removeComments = lib.filter (line: !(lib.hasPrefix "#" line));
+      lines = lib.splitString "\n" (builtins.readFile file);
+      removeComments = lib.filter (line: line != "" && !(lib.hasPrefix "#" line));
       relativePaths = removeComments lines;
       absolutePaths = builtins.map (path: builtins.toPath (root + "/" + path)) relativePaths;
     in
       absolutePaths;
+
+  /* Read the contents of a file removing the trailing \n
+
+     Example:
+       $ echo "1.0" > ./version
+
+       fileContents ./version
+       => "1.0"
+  */
+  fileContents = file: removeSuffix "\n" (builtins.readFile file);
 }

@@ -1,6 +1,6 @@
-{ pkgs, stdenv, buildPythonApplication, pythonPackages, fetchurl, fetchFromGitHub }:
+{ lib, pkgs, stdenv, pythonPackages, fetchurl, fetchFromGitHub }:
 let
-  matrix-angular-sdk = buildPythonApplication rec {
+  matrix-angular-sdk = pythonPackages.buildPythonApplication rec {
     name = "matrix-angular-sdk-${version}";
     version = "0.6.8";
 
@@ -9,25 +9,39 @@ let
       sha256 = "0gmx4y5kqqphnq3m7xk2vpzb0w2a4palicw7wfdr1q2schl9fhz2";
     };
   };
-in
-buildPythonApplication rec {
+  matrix-synapse-ldap3 = pythonPackages.buildPythonApplication rec {
+    name = "matrix-synapse-ldap3-${version}";
+    version = "0.1.2";
+
+    src = fetchFromGitHub {
+      owner = "matrix-org";
+      repo = "matrix-synapse-ldap3";
+      rev = "v${version}";
+      sha256 = "16pivz1lhs1c3z84rxxy8khyvn0hqxwxaz552br1y9ri0maa0aq8";
+    };
+
+    propagatedBuildInputs = with pythonPackages; [ service-identity ldap3 twisted ];
+  };
+in pythonPackages.buildPythonApplication rec {
   name = "matrix-synapse-${version}";
-  version = "0.14.0";
+  version = "0.21.0";
 
   src = fetchFromGitHub {
     owner = "matrix-org";
     repo = "synapse";
-    rev = "5fbdf2bcec40bf2f24fc0698440ee384595ff027";
-    sha256 = "1f9flb68l0bb5fkggxz1pghv72snsx6yia3s58f85z13f9vh84cb";
+    rev = "v${version}";
+    sha256 = "0mxgpfyh7265kh379hsb53lni43xcq9nffanbxwrg8hp8c79pcg3";
   };
 
   patches = [ ./matrix-synapse.patch ];
 
   propagatedBuildInputs = with pythonPackages; [
     blist canonicaljson daemonize dateutil frozendict pillow pybcrypt pyasn1
-    pydenticon pymacaroons-pynacl pynacl pyopenssl pysaml2 pytz requests2
-    service-identity signedjson systemd twisted ujson unpaddedbase64 pyyaml
-    matrix-angular-sdk
+    pydenticon pymacaroons-pynacl pynacl pyopenssl pysaml2 pytz requests
+    signedjson systemd twisted ujson unpaddedbase64 pyyaml
+    matrix-angular-sdk bleach netaddr jinja2 psycopg2
+    psutil msgpack lxml matrix-synapse-ldap3
+    phonenumbers jsonschema
   ];
 
   # Checks fail because of Tox.
@@ -37,9 +51,10 @@ buildPythonApplication rec {
     mock setuptoolsTrial
   ];
 
-  meta = {
+  meta = with stdenv.lib; {
     homepage = https://matrix.org;
     description = "Matrix reference homeserver";
-    license = stdenv.lib.licenses.asl20;
+    license = licenses.asl20;
+    maintainers = [ maintainers.ralith maintainers.roblabla ];
   };
 }

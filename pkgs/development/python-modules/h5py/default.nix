@@ -1,23 +1,23 @@
 { stdenv, fetchurl, python, buildPythonPackage
 , numpy, hdf5, cython, six, pkgconfig
-, mpiSupport ? false, mpi4py ? null, mpi ? null }:
+, mpi4py ? null }:
 
-assert mpiSupport == hdf5.mpiSupport;
-assert mpiSupport -> mpi != null
-  && mpi4py != null
-  && mpi == mpi4py.mpi
-  && mpi == hdf5.mpi
-  ;
+assert hdf5.mpiSupport -> mpi4py != null && hdf5.mpi == mpi4py.mpi;
 
 with stdenv.lib;
 
-buildPythonPackage rec {
-  name = "h5py-${version}";
-  version = "2.5.0";
+let
+  mpi = hdf5.mpi;
+  mpiSupport = hdf5.mpiSupport;
+
+in buildPythonPackage rec {
+  version = "2.7.0";
+  pname = "h5py";
+  name = "${pname}-${version}";
 
   src = fetchurl {
     url = "mirror://pypi/h/h5py/${name}.tar.gz";
-    sha256 = "9833df8a679e108b561670b245bcf9f3a827b10ccb3a5fa1341523852cfac2f6";
+    sha256 = "79254312df2e6154c4928f5e3b22f7a2847b6e5ffb05ddc33e37b16e76d36310";
   };
 
   configure_flags = "--hdf5=${hdf5}" + optionalString mpiSupport " --mpi";

@@ -1,15 +1,15 @@
-{ stdenv, fetchFromGitHub
+{ stdenv, fetchFromGitHub, gnugrep
 , legacySupport ? false }:
 
 stdenv.mkDerivation rec {
   name = "zstd-${version}";
-  version = "0.6.1";
+  version = "1.2.0";
 
   src = fetchFromGitHub {
-    sha256 = "19pp2sjrv8qwzfc9c1mf0idhkicjhr41fsc9d1fyncc34f9riavl";
+    sha256 = "01b5w4yrwa8lgnjyi42zxjhw8cfyh8yfhdsjr04y5qsblz0hv0zl";
     rev = "v${version}";
     repo = "zstd";
-    owner = "Cyan4973";
+    owner = "facebook";
   };
 
   # The Makefiles don't properly use file targets, but blindly rebuild
@@ -24,6 +24,15 @@ stdenv.mkDerivation rec {
     "PREFIX=$(out)"
   ];
 
+  preInstall = ''
+    substituteInPlace programs/zstdgrep \
+      --replace "=grep" "=${gnugrep}/bin/grep" \
+      --replace "=zstdcat" "=$out/bin/zstdcat"
+
+    substituteInPlace programs/zstdless \
+      --replace "zstdcat" "$out/bin/zstdcat"
+  '';
+
   meta = with stdenv.lib; {
     description = "Zstandard real-time compression algorithm";
     longDescription = ''
@@ -33,13 +42,13 @@ stdenv.mkDerivation rec {
       compression speed. Speed/ratio trade-off is configurable by small
       increment, to fit different situations. Note however that decompression
       speed is preserved and remain roughly the same at all settings, a
-      property shared by most LZ compression algorithms, such as zlib. 
+      property shared by most LZ compression algorithms, such as zlib.
     '';
     homepage = http://www.zstd.net/;
     # The licence of the CLI programme is GPLv2+, that of the library BSD-2.
     license = with licenses; [ gpl2Plus bsd2 ];
 
-    platforms = platforms.linux;
-    maintainers = with maintainers; [ nckx ];
+    platforms = platforms.unix;
+    maintainers = with maintainers; [ nckx orivej ];
   };
 }

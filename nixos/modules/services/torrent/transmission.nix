@@ -15,8 +15,7 @@ let
 
   # Strings must be quoted, ints and bools must not (for settings.json).
   toOption = x:
-    if x == true then "true"
-    else if x == false then "false"
+    if isBool x then boolToString x
     else if isInt x then toString x
     else toString ''"${x}"'';
 
@@ -133,7 +132,7 @@ in
           @{PROC}/sys/kernel/random/uuid   r,
           @{PROC}/sys/vm/overcommit_memory r,
 
-          ${pkgs.openssl}/etc/**                     r,
+          ${pkgs.openssl.out}/etc/**                     r,
           ${pkgs.transmission}/share/transmission/** r,
 
           owner ${settingsDir}/** rw,

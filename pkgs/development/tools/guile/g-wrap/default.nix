@@ -9,12 +9,11 @@ stdenv.mkDerivation rec {
 
   # Note: Glib support is optional, but it's quite useful (e.g., it's
   # used by Guile-GNOME).
-  buildInputs = [ guile pkgconfig glib ]
-    ++ stdenv.lib.optional doCheck guile_lib;
+  buildInputs = [ guile pkgconfig glib guile_lib ];
 
   propagatedBuildInputs = [ libffi ];
 
-  doCheck = !stdenv.isFreeBSD; # XXX: 00-socket.test hangs
+  doCheck = true;
 
   meta = {
     description = "G-Wrap, a wrapper generator for Guile";
@@ -26,5 +25,6 @@ stdenv.mkDerivation rec {
     homepage = http://www.nongnu.org/g-wrap/;
     license = stdenv.lib.licenses.lgpl2Plus;
     maintainers = [ stdenv.lib.maintainers.taktoa ];
+    platforms = stdenv.lib.platforms.linux;
   };
 }

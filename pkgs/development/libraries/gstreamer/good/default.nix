@@ -10,7 +10,7 @@ let
   inherit (stdenv.lib) optionals optionalString;
 in
 stdenv.mkDerivation rec {
-  name = "gst-plugins-good-1.8.1";
+  name = "gst-plugins-good-1.10.4";
 
   meta = with stdenv.lib; {
     description = "Gstreamer Good Plugins";
@@ -21,15 +21,15 @@ stdenv.mkDerivation rec {
       code, LGPL or LGPL-compatible for the supporting library).
     '';
     license     = licenses.lgpl2Plus;
-    platforms   = platforms.unix;
+    platforms   = platforms.linux ++ platforms.darwin;
   };
 
   src = fetchurl {
     url = "${meta.homepage}/src/gst-plugins-good/${name}.tar.xz";
-    sha256 = "0wh9mpz3zj7vbdi3xn9gjncqal86kgxn9pdg5vl98y6n45wy20r1";
+    sha256 = "0zjdwxn83sp9wjp9rxjbyk8kf284g9av7l2v6rjldi586hacd1la";
   };
 
-  outputs = [ "dev" "out" ];
+  outputs = [ "out" "dev" ];
 
   nativeBuildInputs = [ pkgconfig python ];
 

@@ -1,27 +1,27 @@
 { stdenv, composableDerivation, fetchurl, pkgconfig, xlibsWrapper, inputproto, libXi
 , freeglut, mesa, libjpeg, zlib, libXinerama, libXft, libpng
 , cfg ? {}
+, darwin, libtiff, freetype
 }:
 
 let inherit (composableDerivation) edf; in
 
-let version = "1.3.3"; in
+let version = "1.3.4"; in
 composableDerivation.composableDerivation {} {
   name = "fltk-${version}";
 
   src = fetchurl {
     url = "http://fltk.org/pub/fltk/${version}/fltk-${version}-source.tar.gz";
-    sha256 = "15qd7lkz5d5ynz70xhxhigpz3wns39v9xcf7ggkl0792syc8sfgq";
+    sha256 = "13y57pnayrkfzm8azdfvysm8b77ysac8zhhdsh8kxmb0x3203ay8";
   };
 
-  # http://www.fltk.org/str.php?L3156
-  postPatch = ''
-    substituteInPlace FL/x.H \
-      --replace 'class Fl_XFont_On_Demand' 'class FL_EXPORT Fl_XFont_On_Demand'
-  '';
+  patches = stdenv.lib.optionals stdenv.isDarwin [ ./nsosv.patch ];
 
   nativeBuildInputs = [ pkgconfig ];
-  propagatedBuildInputs = [ xlibsWrapper inputproto libXi freeglut ];
+  propagatedBuildInputs = [ inputproto ]
+    ++ (if stdenv.isDarwin
+        then (with darwin.apple_sdk.frameworks; [Cocoa AGL GLUT freetype libtiff])
+        else [ xlibsWrapper libXi freeglut ]);
 
   enableParallelBuilding = true;
 
@@ -55,9 +55,8 @@ composableDerivation.composableDerivation {} {
   meta = {
     description = "A C++ cross-platform lightweight GUI library";
     homepage = http://www.fltk.org;
-    platforms = stdenv.lib.platforms.linux;
+    platforms = stdenv.lib.platforms.linux ++ stdenv.lib.platforms.darwin;
     license = stdenv.lib.licenses.gpl2;
   };
 
 }
-

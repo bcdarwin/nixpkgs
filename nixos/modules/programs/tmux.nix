@@ -27,7 +27,7 @@ let
     set -g status-keys ${cfg.keyMode}
     set -g mode-keys   ${cfg.keyMode}
 
-    ${if cfg.keyMode == "vi" then ''
+    ${if cfg.keyMode == "vi" && cfg.customPaneNavigationAndResize then ''
     bind h select-pane -L
     bind j select-pane -D
     bind k select-pane -U
@@ -65,7 +65,6 @@ in {
 
       aggressiveResize = mkOption {
         default = false;
-        example = true;
         type = types.bool;
         description = ''
           Resize the window to the size of the smallest session for which it is the current window.
@@ -81,9 +80,14 @@ in {
 
       clock24 = mkOption {
         default = false;
-        example = true;
         type = types.bool;
         description = "Use 24 hour clock.";
+      };
+
+      customPaneNavigationAndResize = mkOption {
+        default = false;
+        type = types.bool;
+        description = "Override the hjkl and HJKL bindings for pane navigation and resizing in VI mode.";
       };
 
       escapeTime = mkOption {
@@ -117,14 +121,12 @@ in {
 
       newSession = mkOption {
         default = false;
-        example = true;
         type = types.bool;
         description = "Automatically spawn a session if trying to attach and none are running.";
       };
 
       reverseSplit = mkOption {
         default = false;
-        example = true;
         type = types.bool;
         description = "Reverse the window split shortcuts.";
       };

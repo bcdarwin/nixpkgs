@@ -1,18 +1,19 @@
 {stdenv, fetchurl, cmake, pkgconfig, zlib, curl, elfutils, python, libiberty, binutils}:
+
 stdenv.mkDerivation rec {
   name = "kcov-${version}";
-  version = "29";
+  version = "32";
 
   src = fetchurl {
     url = "https://github.com/SimonKagstrom/kcov/archive/v${version}.tar.gz";
-    sha256 = "0nspf1bfq8zv7zmcmvkbgg3c90k10qcd56gyg8ln5z64nadvha9d";
+    sha256 = "0ic5w6r3cpwb32iky1jmyvfclgkqr0rnfyim7j2r6im21846sa85";
   };
 
   preConfigure = "patchShebangs src/bin-to-c-source.py";
   buildInputs = [ cmake pkgconfig zlib curl elfutils python libiberty binutils ];
-  
+
   meta = with stdenv.lib; {
-    description = "code coverage tester for compiled programs, Python scripts and shell scripts";
+    description = "Code coverage tester for compiled programs, Python scripts and shell scripts";
 
     longDescription = ''
       Kcov is a code coverage tester for compiled programs, Python
@@ -26,6 +27,6 @@ stdenv.mkDerivation rec {
     license = licenses.gpl2;
 
     maintainers = [ maintainers.gal_bolle ];
-    };
-    
-  }
+    platforms = platforms.linux;
+  };
+}

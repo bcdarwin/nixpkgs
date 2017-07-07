@@ -4,13 +4,17 @@ with lib;
 
 let
 
+  name = "mpd";
+
   uid = config.ids.uids.mpd;
   gid = config.ids.gids.mpd;
   cfg = config.services.mpd;
 
+  playlistDir = "${cfg.dataDir}/playlists";
+
   mpdConf = pkgs.writeText "mpd.conf" ''
     music_directory     "${cfg.musicDirectory}"
-    playlist_directory  "${cfg.dataDir}/playlists"
+    playlist_directory  "${playlistDir}"
     db_file             "${cfg.dbFile}"
     state_file          "${cfg.dataDir}/state"
     sticker_file        "${cfg.dataDir}/sticker.sql"
@@ -33,6 +37,7 @@ in {
     services.mpd = {
 
       enable = mkOption {
+        type = types.bool;
         default = false;
         description = ''
           Whether to enable MPD, the music player daemon.
@@ -40,6 +45,7 @@ in {
       };
 
       musicDirectory = mkOption {
+        type = types.path;
         default = "${cfg.dataDir}/music";
         description = ''
           The directory where mpd reads music from.
@@ -47,16 +53,19 @@ in {
       };
 
       extraConfig = mkOption {
+        type = types.lines;
         default = "";
         description = ''
           Extra directives added to to the end of MPD's configuration file,
           mpd.conf. Basic configuration like file location and uid/gid
-          is added automatically to the beginning of the file.
+          is added automatically to the beginning of the file. For available
+          options see <literal>man 5 mpd.conf</literal>'.
         '';
       };
 
       dataDir = mkOption {
-        default = "/var/lib/mpd";
+        type = types.path;
+        default = "/var/lib/${name}";
         description = ''
           The directory where MPD stores its state, tag cache,
           playlists etc.
@@ -64,27 +73,31 @@ in {
       };
 
       user = mkOption {
-        default = "mpd";
+        type = types.str;
+        default = name;
         description = "User account under which MPD runs.";
       };
 
       group = mkOption {
-        default = "mpd";
+        type = types.str;
+        default = name;
         description = "Group account under which MPD runs.";
       };
 
       network = {
 
         listenAddress = mkOption {
-          default = "any";
+          type = types.str;
+          default = "127.0.0.1";
+          example = "any";
           description = ''
-            This setting sets the address for the daemon to listen on. Careful attention
-            should be paid if this is assigned to anything other then the default, any.
-            This setting can deny access to control of the daemon.
+            The address for the daemon to listen on.
+            Use <literal>any</literal> to listen on all addresses.
           '';
         };
 
         port = mkOption {
+          type = types.int;
           default = 6600;
           description = ''
             This setting is the TCP port that is desired for the daemon to get assigned
@@ -114,26 +127,29 @@ in {
       after = [ "network.target" "sound.target" ];
       description = "Music Player Daemon";
       wantedBy = [ "multi-user.target" ];
-      path = [ pkgs.mpd ];
-      preStart = "mkdir -p ${cfg.dataDir} && chown -R ${cfg.user}:${cfg.group} ${cfg.dataDir}";
-      script = "exec mpd --no-daemon ${mpdConf}";
+
+      preStart = ''
+        mkdir -p "${cfg.dataDir}" && chown -R ${cfg.user}:${cfg.group} "${cfg.dataDir}"
+        mkdir -p "${playlistDir}" && chown -R ${cfg.user}:${cfg.group} "${playlistDir}"
+      '';
       serviceConfig = {
         User = "${cfg.user}";
         PermissionsStartOnly = true;
+        ExecStart = "${pkgs.mpd}/bin/mpd --no-daemon ${mpdConf}";
       };
     };
 
-    users.extraUsers = optionalAttrs (cfg.user == "mpd") (singleton {
+    users.extraUsers = optionalAttrs (cfg.user == name) (singleton {
       inherit uid;
-      name = "mpd";
+      inherit name;
       group = cfg.group;
       extraGroups = [ "audio" ];
       description = "Music Player Daemon user";
       home = "${cfg.dataDir}";
     });
 
-    users.extraGroups = optionalAttrs (cfg.group == "mpd") (singleton {
-      name = "mpd";
+    users.extraGroups = optionalAttrs (cfg.group == name) (singleton {
+      inherit name;
       gid = gid;
     });
   };

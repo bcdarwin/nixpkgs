@@ -10,7 +10,6 @@ stdenv.mkDerivation rec {
   };
 
   buildInputs = with pythonPackages; [ python wrapPython ];
-  pythonPath = [ pythonPackages.curses ];
 
   installPhase = ''
     install -D transmission-remote-cli $out/bin/transmission-remote-cli
@@ -22,5 +21,6 @@ stdenv.mkDerivation rec {
     description = "Curses interface for the Transmission BitTorrent daemon";
     homepage = https://github.com/fagga/transmission-remote-cli;
     license = stdenv.lib.licenses.gpl3Plus;
+    platforms = stdenv.lib.platforms.unix;
   };
 }

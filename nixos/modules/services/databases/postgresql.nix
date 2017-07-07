@@ -11,12 +11,14 @@ let
     if cfg.extraPlugins == [] then pg
     else pkgs.buildEnv {
       name = "postgresql-and-plugins-${(builtins.parseDrvName pg.name).version}";
-      paths = [ pg ] ++ cfg.extraPlugins;
+      paths = [ pg pg.lib ] ++ cfg.extraPlugins;
+      buildInputs = [ pkgs.makeWrapper ];
       postBuild =
         ''
           mkdir -p $out/bin
           rm $out/bin/{pg_config,postgres,pg_ctl}
           cp --target-directory=$out/bin ${pg}/bin/{postgres,pg_config,pg_ctl}
+          wrapProgram $out/bin/postgres --set NIX_PGLIBDIR $out/lib
         '';
     };
 
@@ -35,6 +37,10 @@ let
     '';
 
   pre84 = versionOlder (builtins.parseDrvName postgresql.name).version "8.4";
+
+  # NixOS traditionally used `root` as superuser, most other distros use `postgres`. From 17.09
+  # we also try to follow this standard
+  superuser = (if versionAtLeast config.system.stateVersion "17.09" then "postgres" else "root");
 
 in
 
@@ -72,7 +78,7 @@ in
 
       dataDir = mkOption {
         type = types.path;
-        default = "/var/db/postgresql";
+        example = "/var/lib/postgresql/9.6";
         description = ''
           Data directory for PostgreSQL.
         '';
@@ -158,7 +164,13 @@ in
       # Note: when changing the default, make it conditional on
       # ‘system.stateVersion’ to maintain compatibility with existing
       # systems!
-      mkDefault (if versionAtLeast config.system.stateVersion "16.03" then pkgs.postgresql95 else pkgs.postgresql94);
+      mkDefault (if versionAtLeast config.system.stateVersion "17.09" then pkgs.postgresql96
+            else if versionAtLeast config.system.stateVersion "16.03" then pkgs.postgresql95
+            else pkgs.postgresql94);
+
+    services.postgresql.dataDir =
+      mkDefault (if versionAtLeast config.system.stateVersion "17.09" then "/var/lib/postgresql/${config.services.postgresql.package.psqlSchema}"
+                 else "/var/db/postgresql");
 
     services.postgresql.authentication = mkAfter
       ''
@@ -203,7 +215,7 @@ in
           ''
             # Initialise the database.
             if ! test -e ${cfg.dataDir}/PG_VERSION; then
-              initdb -U root
+              initdb -U ${superuser}
               # See postStart!
               touch "${cfg.dataDir}/.first_startup"
             fi
@@ -235,14 +247,14 @@ in
         # Wait for PostgreSQL to be ready to accept connections.
         postStart =
           ''
-            while ! psql --port=${toString cfg.port} postgres -c "" 2> /dev/null; do
+            while ! ${pkgs.sudo}/bin/sudo -u ${superuser} psql --port=${toString cfg.port} -d postgres -c "" 2> /dev/null; do
                 if ! kill -0 "$MAINPID"; then exit 1; fi
                 sleep 0.1
             done
 
             if test -e "${cfg.dataDir}/.first_startup"; then
               ${optionalString (cfg.initialScript != null) ''
-                psql -f "${cfg.initialScript}" --port=${toString cfg.port} postgres
+                ${pkgs.sudo}/bin/sudo -u ${superuser} psql -f "${cfg.initialScript}" --port=${toString cfg.port} -d postgres
               ''}
               rm -f "${cfg.dataDir}/.first_startup"
             fi
@@ -252,5 +264,7 @@ in
       };
 
   };
+
+  meta.doc = ./postgresql.xml;
 
 }

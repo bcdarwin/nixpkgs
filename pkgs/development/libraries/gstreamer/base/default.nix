@@ -4,7 +4,7 @@
 }:
 
 stdenv.mkDerivation rec {
-  name = "gst-plugins-base-1.8.1";
+  name = "gst-plugins-base-1.10.4";
 
   meta = {
     description = "Base plugins and helper libraries";
@@ -15,10 +15,10 @@ stdenv.mkDerivation rec {
 
   src = fetchurl {
     url = "${meta.homepage}/src/gst-plugins-base/${name}.tar.xz";
-    sha256 = "0vxd5w7r1jqp37cw5lhyc6vj2h6z8y9v3xarwd2c6rfjbjcdxa8m";
+    sha256 = "1dsyjf6rncsbg4rfj40cvf1wwpjj9h3j3c7bh4zp7jylnfv4blpn";
   };
 
-  outputs = [ "dev" "out" ];
+  outputs = [ "out" "dev" ];
 
   nativeBuildInputs = [
     pkgconfig python gobjectIntrospection
@@ -44,4 +44,3 @@ stdenv.mkDerivation rec {
 
   enableParallelBuilding = true;
 }
-

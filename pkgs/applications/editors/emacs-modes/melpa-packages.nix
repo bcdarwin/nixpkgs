@@ -13,7 +13,7 @@ To update the list of packages from MELPA,
 
 */
 
-{ lib }:
+{ lib, external }:
 
 self:
 
@@ -36,10 +36,6 @@ self:
     });
 
     overrides = {
-      ac-php = super.ac-php.override {
-        inherit (self.melpaPackages) company popup;
-      };
-
       # upstream issue: mismatched filename
       ack-menu = markBroken super.ack-menu;
 
@@ -178,6 +174,17 @@ self:
 
       # upstream issue: missing file header
       zeitgeist = markBroken super.zeitgeist;
+
+      w3m = super.w3m.override (args: {
+        melpaBuild = drv: args.melpaBuild (drv // {
+          prePatch =
+            let w3m = "${lib.getBin external.w3m}/bin/w3m"; in ''
+              substituteInPlace w3m.el \
+                --replace 'defcustom w3m-command nil' \
+                          'defcustom w3m-command "${w3m}"'
+            '';
+        });
+      });
     };
 
     melpaPackages = super // overrides;

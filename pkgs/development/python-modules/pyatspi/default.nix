@@ -1,8 +1,9 @@
 { stdenv, fetchurl, pkgconfig, at_spi2_core, pythonPackages }:
 
 stdenv.mkDerivation rec {
+  pname = "pyatspi";
   version = "2.18.0";
-  name = "pyatspi-${version}";
+  name = "${pname}-${version}";
 
   src = fetchurl {
     url = "mirror://gnome/sources/pyatspi/2.18/${name}.tar.xz";
@@ -23,5 +24,6 @@ stdenv.mkDerivation rec {
     homepage = http://www.linuxfoundation.org/en/AT-SPI_on_D-Bus;
     license = licenses.gpl2;
     maintainers = with maintainers; [ jgeerds ];
+    platforms = with platforms; unix;
   };
 }

@@ -1,26 +1,32 @@
-{ stdenv, fetchurl, openssl, libtool, perl, libxml2 }:
+{ stdenv, lib, fetchurl, openssl, libtool, perl, libxml2
+, enableSeccomp ? false, libseccomp ? null }:
 
-let version = "9.10.4"; in
+assert enableSeccomp -> libseccomp != null;
+
+let version = "9.11.1-P2"; in
 
 stdenv.mkDerivation rec {
   name = "bind-${version}";
 
   src = fetchurl {
     url = "http://ftp.isc.org/isc/bind9/${version}/${name}.tar.gz";
-    sha256 = "0mmhzi4483mkak47wj255a36g3v0yilxwfwlbckr1hssinri5m7q";
+    sha256 = "19gyh7yij6cpvk5b199ghhns5wmsz67d2rpgvl91dbkm2m1wclxz";
   };
 
-  outputs = [ "dev" "bin" "out" "man" ];
+  outputs = [ "out" "lib" "dev" "man" "dnsutils" "host" ];
 
   patches = [ ./dont-keep-configure-flags.patch ./remove-mkdir-var.patch ] ++
     stdenv.lib.optional stdenv.isDarwin ./darwin-openssl-linking-fix.patch;
 
-  buildInputs = [ openssl libtool perl libxml2 ];
+  buildInputs = [ openssl libtool perl libxml2 ] ++
+    stdenv.lib.optional enableSeccomp libseccomp;
+
+  STD_CDEFINES = [ "-DDIG_SIGCHASE=1" ]; # support +sigchase
 
   configureFlags = [
     "--localstatedir=/var"
     "--with-libtool"
-    "--with-libxml2=${libxml2}"
+    "--with-libxml2=${libxml2.dev}"
     "--with-openssl=${openssl.dev}"
     "--without-atf"
     "--without-dlopen"
@@ -31,14 +37,20 @@ stdenv.mkDerivation rec {
     "--without-pkcs11"
     "--without-purify"
     "--without-python"
-  ];
+  ] ++ lib.optional enableSeccomp "--enable-seccomp";
 
   postInstall = ''
     moveToOutput bin/bind9-config $dev
     moveToOutput bin/isc-config.sh $dev
 
-    for f in $out/lib/*.la; do
-      sed -i $f -e 's|-L${openssl.dev}|-L${openssl.out}|g'
+    moveToOutput bin/host $host
+
+    moveToOutput bin/dig $dnsutils
+    moveToOutput bin/nslookup $dnsutils
+    moveToOutput bin/nsupdate $dnsutils
+
+    for f in "$lib/lib/"*.la "$dev/bin/"{isc-config.sh,bind*-config}; do
+      sed -i "$f" -e 's|-L${openssl.dev}|-L${openssl.out}|g'
     done
   '';
 
@@ -49,5 +61,7 @@ stdenv.mkDerivation rec {
 
     maintainers = with stdenv.lib.maintainers; [viric peti];
     platforms = with stdenv.lib.platforms; unix;
+
+    outputsToInstall = [ "out" "dnsutils" "host" ];
   };
 }

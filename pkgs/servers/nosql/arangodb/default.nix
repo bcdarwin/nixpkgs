@@ -1,6 +1,8 @@
-{ stdenv, fetchFromGitHub, openssl, zlib, python, gyp, bash, go, readline }:
+{ stdenv, fetchFromGitHub, openssl, zlib, python2Packages, bash, go, readline }:
 
-stdenv.mkDerivation rec {
+let
+  inherit (python2Packages) python gyp;
+in stdenv.mkDerivation rec {
   version = "2.5.3";
   name    = "arangodb-${version}";
 
@@ -11,6 +13,13 @@ stdenv.mkDerivation rec {
     sha256 = "1v07fghf2jd2mvkfqhag0xblf6sxw7kx9kmhs2xpyrpns58lirvc";
   };
 
+  postPatch = ''
+    substituteInPlace 3rdParty/V8-3.31.74.1/build/gyp/gyp --replace /bin/bash ${bash}/bin/bash
+    substituteInPlace 3rdParty/etcd/build --replace /bin/bash ${bash}/bin/bash
+    sed '1i#include <cmath>' -i arangod/Aql/Functions.cpp \
+      -i lib/Basics/string-buffer.cpp
+  '';
+
   buildInputs = [
     openssl zlib python gyp go readline
   ];
@@ -18,12 +27,6 @@ stdenv.mkDerivation rec {
   configureFlagsArray = [ "--with-openssl-lib=${openssl.out}/lib" ];
 
   NIX_CFLAGS_COMPILE = "-Wno-error=strict-overflow";
-
-
-  patchPhase = ''
-    substituteInPlace 3rdParty/V8-3.31.74.1/build/gyp/gyp --replace /bin/bash ${bash}/bin/bash
-    substituteInPlace 3rdParty/etcd/build --replace /bin/bash ${bash}/bin/bash
-    '';
 
   enableParallelBuilding = true;
 

@@ -1,4 +1,4 @@
-{ stdenv, fetchurl, guile, buildEnv
+{ stdenv, fetchurl, pkgconfig, guile, buildEnv
 , SDL, SDL_image, SDL_ttf, SDL_mixer
 }:
 
@@ -17,10 +17,10 @@ stdenv.mkDerivation rec {
     sha256 = "126n4rd0ydh6i2s11ari5k85iivradlf12zq13b34shf9k1wn5am";
   };
 
-  nativeBuildInputs = [ guile ];
+  nativeBuildInputs = [ pkgconfig guile ];
 
   buildInputs = [
-    SDL SDL_image SDL_ttf SDL_mixer
+    SDL.dev SDL_image SDL_ttf SDL_mixer
   ];
 
   GUILE_AUTO_COMPILE = 0;

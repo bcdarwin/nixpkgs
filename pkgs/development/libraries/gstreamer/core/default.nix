@@ -3,7 +3,7 @@
 }:
 
 stdenv.mkDerivation rec {
-  name = "gstreamer-1.8.1";
+  name = "gstreamer-1.10.4";
 
   meta = {
     description = "Open source multimedia framework";
@@ -15,10 +15,10 @@ stdenv.mkDerivation rec {
 
   src = fetchurl {
     url = "${meta.homepage}/src/gstreamer/${name}.tar.xz";
-    sha256 = "01ribrzc4x9xlv6ci66w2svpqxywjc129m6f2xy9gp82jgxj4dss";
+    sha256 = "062jidnw17hkpva6ddygp80gyasyigfkpm1y7w56rk56a2pzbhjh";
   };
 
-  outputs = [ "dev" "out" ];
+  outputs = [ "out" "dev" ];
   outputBin = "dev";
 
   nativeBuildInputs = [
@@ -34,8 +34,8 @@ stdenv.mkDerivation rec {
   '';
 
   postInstall = ''
-    for prog in "$out/bin/"*; do
-        wrapProgram "$prog" --prefix GST_PLUGIN_SYSTEM_PATH : "\$(unset _tmp; for profile in \$NIX_PROFILES; do _tmp="\$profile/lib/gstreamer-1.0''$\{_tmp:+:\}\$_tmp"; done; printf "\$_tmp")"
+    for prog in "$dev/bin/"*; do
+        wrapProgram "$prog" --suffix GST_PLUGIN_SYSTEM_PATH : "\$(unset _tmp; for profile in \$NIX_PROFILES; do _tmp="\$profile/lib/gstreamer-1.0''$\{_tmp:+:\}\$_tmp"; done; printf "\$_tmp")"
     done
   '';
 

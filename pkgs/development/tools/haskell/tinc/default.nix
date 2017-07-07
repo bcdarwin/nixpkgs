@@ -3,16 +3,16 @@
 , hpack, hspec, HUnit, language-dot, mockery, parsec, process
 , QuickCheck, safe, stdenv, temporary, time, transformers, unix
 , unix-compat, with-location, yaml, fetchFromGitHub
-, ghc, cabal2nix, cabal-install, makeWrapper
+, cabal2nix, cabal-install, makeWrapper
 }:
 mkDerivation {
   pname = "tinc";
-  version = "20160511";
+  version = "20170624";
   src = fetchFromGitHub {
     owner = "sol";
     repo = "tinc";
-    rev = "405af997c182b89edfc9656612c32616e98c7862";
-    sha256 = "0zryw3abp64922dnk6jss58lq4k7ijwbbn35zh5vbg3ns8307k6b";
+    rev = "70881515693fd83d381fe045ae76d5257774f5e3";
+    sha256 = "0c6sx3vbcnq69dhqhpi01a4p4qss24rwxiz6jmw65rj73adhj4mw";
   };
   isLibrary = false;
   isExecutable = true;
@@ -30,12 +30,12 @@ mkDerivation {
   postInstall = ''
     source ${makeWrapper}/nix-support/setup-hook
     wrapProgram $out/bin/tinc \
-      --prefix PATH : '${ghc}/bin' \
       --prefix PATH : '${cabal2nix}/bin' \
       --prefix PATH : '${cabal-install}/bin'
   '';
   description = "A dependency manager for Haskell";
   homepage = "https://github.com/sol/tinc#readme";
   license = stdenv.lib.licenses.mit;
+  hydraPlatforms = [ "x86_64-linux" ];
   maintainers = [ stdenv.lib.maintainers.robbinch ];
 }

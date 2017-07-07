@@ -10,8 +10,13 @@ stdenv.mkDerivation {
 
   nativeBuildInputs = [ indent ];
 
+  hardeningDisable = [ "format" ];
+
+  # Hack to avoid TMPDIR in RPATHs.
+  preFixup = ''rm -rf "$(pwd)" '';
+
   meta = {
-    description = "library reading dwg files";
+    description = "Library reading dwg files";
     homepage = http://libdwg.sourceforge.net/en/;
     license = stdenv.lib.licenses.gpl3;
     maintainers = [stdenv.lib.maintainers.marcweber];

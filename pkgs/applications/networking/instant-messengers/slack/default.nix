@@ -1,31 +1,34 @@
 { stdenv, fetchurl, dpkg
-, alsaLib, atk, cairo, cups, dbus, expat, fontconfig, freetype, glib, gnome
-, libnotify, nspr, nss, systemd, xorg }:
+, alsaLib, atk, cairo, cups, curl, dbus, expat, fontconfig, freetype, glib
+, gnome2, libnotify, libxcb, nspr, nss, systemd, xorg }:
 
 let
 
-  version = "2.0.3";
+  version = "2.6.2";
 
   rpath = stdenv.lib.makeLibraryPath [
     alsaLib
     atk
     cairo
     cups
+    curl
     dbus
     expat
     fontconfig
     freetype
     glib
-    gnome.GConf
-    gnome.gdk_pixbuf
-    gnome.gtk
-    gnome.pango
+    gnome2.GConf
+    gnome2.gdk_pixbuf
+    gnome2.gtk
+    gnome2.pango
     libnotify
+    libxcb
     nspr
     nss
     stdenv.cc.cc
     systemd
 
+    xorg.libxkbfile
     xorg.libX11
     xorg.libXcomposite
     xorg.libXcursor
@@ -36,13 +39,14 @@ let
     xorg.libXrandr
     xorg.libXrender
     xorg.libXtst
+    xorg.libXScrnSaver
   ] + ":${stdenv.cc.cc.lib}/lib64";
 
   src =
     if stdenv.system == "x86_64-linux" then
       fetchurl {
-        url = "https://slack-ssb-updates.global.ssl.fastly.net/linux_releases/slack-desktop-${version}-amd64.deb";
-        sha256 = "0pp8n1w9kmh3pph5kc6akdswl3z2lqwryjg9d267wgj62mslr3cg";
+        url = "https://downloads.slack-edge.com/linux_releases/slack-desktop-${version}-amd64.deb";
+        sha256 = "01zdzzpnv8qpmcpy6h9x7izrnwm0y015j5p5rnjwx8ki712wnmm8";
       }
     else
       throw "Slack is not supported on ${stdenv.system}";
@@ -58,7 +62,7 @@ in stdenv.mkDerivation {
     mkdir -p $out
     dpkg -x $src $out
     cp -av $out/usr/* $out
-    rm -rf $out/usr $out/share/lintian
+    rm -rf $out/etc $out/usr $out/share/lintian
 
     # Otherwise it looks "suspicious"
     chmod -R g-w $out

@@ -83,19 +83,23 @@ let
 
   # Unpack Mediawiki and put the config file in its root directory.
   mediawikiRoot = pkgs.stdenv.mkDerivation rec {
-    name= "mediawiki-1.23.13";
+    name= "mediawiki-1.27.3";
 
     src = pkgs.fetchurl {
-      url = "http://download.wikimedia.org/mediawiki/1.23/${name}.tar.gz";
-      sha256 = "168wpf53n4ksj2g5q5r0hxapx6238dvsfng5ff9ixk6axsn0j5d0";
+      url = "http://download.wikimedia.org/mediawiki/1.27/${name}.tar.gz";
+      sha256 = "08x8mvc0y1gwq8rg0zm98wc6hc5j8imb6dcpx6s7392j5dc71m0i";
     };
 
     skins = config.skins;
+    extensions = config.extensions;
 
     buildPhase =
       ''
         for skin in $skins; do
           cp -prvd $skin/* skins/
+        done
+        for extension in $extensions; do
+          cp -prvd $extension/* extensions/
         done
       ''; # */
 
@@ -287,7 +291,18 @@ in
         '';
     };
 
+    extensions = mkOption {
+      default = [];
+      type = types.listOf types.path;
+      description =
+        ''
+          List of paths whose content is copied to the 'extensions'
+          subdirectory of the MediaWiki installation.
+        '';
+    };
+
     extraConfig = mkOption {
+      type = types.lines;
       default = "";
       example =
         ''

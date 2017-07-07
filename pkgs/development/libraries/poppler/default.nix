@@ -1,12 +1,17 @@
 { stdenv, lib, fetchurl, fetchpatch, pkgconfig, libiconv, libintlOrEmpty
 , zlib, curl, cairo, freetype, fontconfig, lcms, libjpeg, openjpeg
-, minimal ? false, qt4Support ? false, qt4 ? null, qt5Support ? false, qtbase ? null
-, utils ? false, suffix ? "glib"
+, withData ? true, poppler_data
+, qt4Support ? false, qt4 ? null
+, qt5Support ? false, qtbase ? null
+, introspectionSupport ? false, gobjectIntrospection ? null
+, utils ? false
+, minimal ? false, suffix ? "glib"
+, hostPlatform
 }:
 
-let # beware: updates often break cups_filters build
-  version = "0.43.0"; # even major numbers are stable
-  sha256 = "0mi4zf0pz3x3fx3ir7szz1n57nywgbpd4mp2r7mvf47f4rmf4867";
+let # beware: updates often break cups-filters build
+  version = "0.50.0";
+  sha256 = "0dmwnh59m75vhii6dw63x8l0qa0ha733pb8bdqzr7lw9nwc37jf9";
 in
 stdenv.mkDerivation rec {
   name = "poppler-${suffix}-${version}";
@@ -16,20 +21,23 @@ stdenv.mkDerivation rec {
     inherit sha256;
   };
 
-  outputs = [ "dev" "out" ];
+  outputs = [ "out" "dev" ];
 
-  patches = [ ./datadir_env.patch ];
+  buildInputs = [ libiconv ] ++ libintlOrEmpty ++ lib.optional withData poppler_data;
 
   # TODO: reduce propagation to necessary libs
   propagatedBuildInputs = with lib;
-    [ zlib freetype fontconfig libjpeg ]
-    ++ optionals (!minimal) [ cairo lcms curl openjpeg ]
+    [ zlib freetype fontconfig libjpeg openjpeg ]
+    ++ optionals (!minimal) [ cairo lcms curl ]
     ++ optional qt4Support qt4
-    ++ optional qt5Support qtbase;
+    ++ optional qt5Support qtbase
+    ++ optional introspectionSupport gobjectIntrospection;
 
-  nativeBuildInputs = [ pkgconfig libiconv ] ++ libintlOrEmpty;
+  nativeBuildInputs = [ pkgconfig ];
 
   NIX_CFLAGS_COMPILE = [ "-DQT_NO_DEBUG" ];
+
+  CXXFLAGS = lib.optional qt5Support "-std=c++11";
 
   configureFlags = with lib;
     [
@@ -40,15 +48,16 @@ stdenv.mkDerivation rec {
     ]
     ++ optionals minimal [
       "--disable-poppler-glib" "--disable-poppler-cpp"
-      "--disable-libopenjpeg" "--disable-libcurl"
+      "--disable-libcurl"
     ]
-    ++ optional (!utils) "--disable-utils" ;
+    ++ optional (!utils) "--disable-utils"
+    ++ optional introspectionSupport "--enable-introspection";
 
   enableParallelBuilding = true;
 
   crossAttrs.postPatch =
     # there are tests using `strXXX_s` functions that are missing apparently
-    stdenv.lib.optionalString (stdenv.cross.libc or null == "msvcrt")
+    stdenv.lib.optionalString (hostPlatform.libc or null == "msvcrt")
       "sed '/^SUBDIRS =/s/ test / /' -i Makefile.in";
 
   meta = with lib; {

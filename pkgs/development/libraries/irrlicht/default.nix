@@ -17,7 +17,7 @@ stdenv.mkDerivation rec {
   '';
 
   buildPhase = ''
-    make sharedlib NDEBUG=1
+    make sharedlib NDEBUG=1 "LDFLAGS=-lX11 -lGL -lXxf86vm"
   '';
 
   preInstall = ''
@@ -31,5 +31,6 @@ stdenv.mkDerivation rec {
     homepage = http://irrlicht.sourceforge.net/;
     license = stdenv.lib.licenses.zlib;
     description = "Open source high performance realtime 3D engine written in C++";
+    platforms = stdenv.lib.platforms.linux;
   };
 }

@@ -1,8 +1,11 @@
-{ stdenv, fetchurl, cpio, pkgconfig, file, which, unzip, zip, xorg, cups, freetype
-, alsaLib, bootjdk, cacert, perl, liberation_ttf, fontconfig, zlib
+{ stdenv, lib, fetchurl, cpio, pkgconfig, file, which, unzip, zip, cups, freetype
+, alsaLib, bootjdk, cacert, perl, liberation_ttf, fontconfig, zlib, lndir
+, libX11, libICE, libXrender, libXext, libXt, libXtst, libXi, libXinerama, libXcursor
+, libjpeg, giflib
 , setJavaClassPath
 , minimal ? false
 , enableInfinality ? true # font rendering patch
+, enableGnome2 ? true, gtk2, gnome_vfs, glib, GConf
 }:
 
 let
@@ -18,42 +21,42 @@ let
     else
       throw "openjdk requires i686-linux or x86_64 linux";
 
-  update = "92";
-  build = "14";
+  update = "131";
+  build = "11";
   baseurl = "http://hg.openjdk.java.net/jdk8u/jdk8u";
   repover = "jdk8u${update}-b${build}";
   paxflags = if stdenv.isi686 then "msp" else "m";
   jdk8 = fetchurl {
              url = "${baseurl}/archive/${repover}.tar.gz";
-             sha256 = "05ly2v3b6vr3sxa27m7ahlp8w4w1q68rki2dfczrklcdq4l61g0r";
+             sha256 = "1k401wsickbdy50yxjd26v8qm9519kxayaj3b103cr6ygp2rd9s6";
           };
   langtools = fetchurl {
              url = "${baseurl}/langtools/archive/${repover}.tar.gz";
-             sha256 = "1zb7gvj1b1q3pvq5x7ac98k5dk83m7849ngcy1swfwj18g8i4k9p";
+             sha256 = "1qj75bb17a9czvxz7rm246w97cavglrssx0l1mkbickx0i0wamm8";
           };
   hotspot = fetchurl {
              url = "${baseurl}/hotspot/archive/${repover}.tar.gz";
-             sha256 = "057qrhm9gbz672qgb85al9p3qvgvbviadppf5a9b8hp5sg322f35";
+             sha256 = "0kh8rk5y3n4g3hyjzflc8nwc0kyakjivpwlpj1bncsm1sykw8lr8";
           };
   corba = fetchurl {
              url = "${baseurl}/corba/archive/${repover}.tar.gz";
-             sha256 = "0s9h61jw42nbvrw24qaizp7pp063ala37sjgl547zfglhk1dlzi8";
+             sha256 = "0gqa58mwwyf6mbgp48j1akv1y8yq55zpwfziqrbdbpkcsaf603n7";
           };
   jdk = fetchurl {
              url = "${baseurl}/jdk/archive/${repover}.tar.gz";
-             sha256 = "0sgyjdmxsrdj8b8y2ri3c70x9l9m777v559cq8rmaz1jpc9lld4s";
+             sha256 = "0ymvvi7srr9qkss20s1yg3x2mjw178bscrnxa6s8y82gsw02y820";
           };
   jaxws = fetchurl {
              url = "${baseurl}/jaxws/archive/${repover}.tar.gz";
-             sha256 = "12aajlswn5nkm4nbrdh3jff2sz81wdczrgliwd5lnqfnh73sbbkp";
+             sha256 = "0507mxvir4s536pdz45pvmahwa6s3h2yhg6rwdzrb568ab06asmi";
           };
   jaxp = fetchurl {
              url = "${baseurl}/jaxp/archive/${repover}.tar.gz";
-             sha256 = "133r5wicgva6mklrlnvb09p9izyw0fj281s51kndf3ba3zzggvv3";
+             sha256 = "0igbg8axk028kqs9q11m8hb5bg2fa0qcwffbpfbhilyw5gmf7cy8";
           };
   nashorn = fetchurl {
              url = "${baseurl}/nashorn/archive/${repover}.tar.gz";
-             sha256 = "1rmk868qg7kgv7f5lhj1b7wdnql0bj2bfqd2lg9ci64418j8x8bn";
+             sha256 = "0l63zm5a7ql3xvfxy5kzazq2184mpx0zyqzinjmq7v0q573g8xak";
           };
   openjdk8 = stdenv.mkDerivation {
     name = "openjdk-8u${update}b${build}";
@@ -65,10 +68,11 @@ let
 
     nativeBuildInputs = [ pkgconfig ];
     buildInputs = [
-      cpio file which unzip zip
-      xorg.libX11 xorg.libXt xorg.libXext xorg.libXrender xorg.libXtst
-      xorg.libXi xorg.libXinerama xorg.libXcursor xorg.lndir
-      cups freetype alsaLib perl liberation_ttf fontconfig bootjdk zlib
+      cpio file which unzip zip perl bootjdk zlib cups freetype alsaLib
+      libjpeg giflib libX11 libICE libXext libXrender libXtst libXt libXtst
+      libXi libXinerama libXcursor lndir fontconfig
+    ] ++ lib.optionals (!minimal && enableGnome2) [
+      gtk2 gnome_vfs GConf glib
     ];
 
     prePatch = ''
@@ -82,10 +86,12 @@ let
       ./fix-java-home-jdk8.patch
       ./read-truststore-from-env-jdk8.patch
       ./currency-date-range-jdk8.patch
-    ] ++ (if enableInfinality then [
+    ] ++ lib.optionals (!minimal && enableInfinality) [
       ./004_add-fontconfig.patch
       ./005_enable-infinality.patch
-    ] else []);
+    ] ++ lib.optionals (!minimal && enableGnome2) [
+      ./swing-use-gtk.patch
+    ];
 
     preConfigure = ''
       chmod +x configure
@@ -101,41 +107,54 @@ let
       "--enable-unlimited-crypto"
       "--disable-debug-symbols"
       "--disable-freetype-bundling"
-    ] ++ (if minimal then [
-      "--disable-headful"
-      "--with-zlib=bundled"
-      "--with-giflib=bundled"
-    ] else [
       "--with-zlib=system"
-    ]);
+      "--with-giflib=system"
+      "--with-stdc++lib=dynamic"
 
-    NIX_LDFLAGS= if minimal then null else "-lfontconfig";
+      # glibc 2.24 deprecated readdir_r so we need this
+      # See https://www.mail-archive.com/openembedded-devel@lists.openembedded.org/msg49006.html
+      "--with-extra-cflags=\"-Wno-error=deprecated-declarations\""
+    ] ++ lib.optional minimal "--disable-headful";
 
-    buildFlags = "all";
+    NIX_LDFLAGS= lib.optionals (!minimal) [
+      "-lfontconfig" "-lcups" "-lXinerama" "-lXrandr" "-lmagic"
+    ] ++ lib.optionals (!minimal && enableGnome2) [
+      "-lgtk-x11-2.0" "-lgio-2.0" "-lgnomevfs-2" "-lgconf-2"
+    ];
+
+    buildFlags = [ "all" ];
 
     installPhase = ''
       mkdir -p $out/lib/openjdk $out/share $jre/lib/openjdk
 
       cp -av build/*/images/j2sdk-image/* $out/lib/openjdk
 
-      # Move some stuff to top-level.
-      mv $out/lib/openjdk/include $out/include
-      mv $out/lib/openjdk/man $out/share/man
+      # Remove some broken manpages.
+      rm -rf $out/lib/openjdk/man/ja*
+
+      # Mirror some stuff in top-level.
+      mkdir $out/include $out/share/man
+      ln -s $out/lib/openjdk/include/* $out/include/
+      ln -s $out/lib/openjdk/man/* $out/share/man/
 
       # jni.h expects jni_md.h to be in the header search path.
       ln -s $out/include/linux/*_md.h $out/include/
 
-      # Remove some broken manpages.
-      rm -rf $out/share/man/ja*
-
       # Remove crap from the installation.
       rm -rf $out/lib/openjdk/demo $out/lib/openjdk/sample
+      ${lib.optionalString minimal ''
+        rm $out/lib/openjdk/jre/lib/${architecture}/{libjsound,libjsoundalsa,libsplashscreen,libawt*,libfontmanager}.so
+        rm $out/lib/openjdk/jre/bin/policytool
+        rm $out/lib/openjdk/bin/{policytool,appletviewer}
+      ''}
 
       # Move the JRE to a separate output and setup fallback fonts
       mv $out/lib/openjdk/jre $jre/lib/openjdk/
       mkdir $out/lib/openjdk/jre
-      mkdir -p $jre/lib/openjdk/jre/lib/fonts/fallback
-      lndir ${liberation_ttf}/share/fonts/truetype $jre/lib/openjdk/jre/lib/fonts/fallback
+      ${lib.optionalString (!minimal) ''
+        mkdir -p $jre/lib/openjdk/jre/lib/fonts/fallback
+        lndir ${liberation_ttf}/share/fonts/truetype $jre/lib/openjdk/jre/lib/fonts/fallback
+      ''}
       lndir $jre/lib/openjdk/jre $out/lib/openjdk/jre
 
       rm -rf $out/lib/openjdk/jre/bina
@@ -170,6 +189,7 @@ let
 
       ln -s $out/lib/openjdk/bin $out/bin
       ln -s $jre/lib/openjdk/jre/bin $jre/bin
+      ln -s $jre/lib/openjdk/jre $out/jre
     '';
 
     # FIXME: this is unnecessary once the multiple-outputs branch is merged.

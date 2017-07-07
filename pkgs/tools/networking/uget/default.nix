@@ -1,19 +1,19 @@
 { stdenv, fetchurl, pkgconfig, intltool, openssl, curl, libnotify, gstreamer,
-  gst_plugins_base, gst_plugins_good, gnome3, makeWrapper, aria2 ? null }:
+  gst-plugins-base, gst-plugins-good, gnome3, makeWrapper, aria2 ? null }:
 
 stdenv.mkDerivation rec {
   name = "uget-${version}";
-  version = "2.0.5";
+  version = "2.0.8";
 
   src = fetchurl {
     url = "mirror://sourceforge/urlget/${name}.tar.gz";
-    sha256 = "0cqz8cd8dyciam07w6ipgzj52zhf9q0zvg6ag6wz481sxkpdnfh3";
+    sha256 = "0919cf7lfk1djdl003cahqjvafdliv7v2l8r5wg95n4isqggdk75";
   };
 
   nativeBuildInputs = [ pkgconfig intltool makeWrapper ];
   
   buildInputs = [
-    openssl curl libnotify gstreamer gst_plugins_base gst_plugins_good
+    openssl curl libnotify gstreamer gst-plugins-base gst-plugins-good
     gnome3.gtk gnome3.dconf
   ]
   ++ (stdenv.lib.optional (aria2 != null) aria2);

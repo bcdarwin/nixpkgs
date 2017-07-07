@@ -1,4 +1,4 @@
-{ stdenv, curl, cacert
+{ stdenv, curl, xidel, cacert
 # Begin download parameters
 , username ? ""
 , password ? ""
@@ -8,6 +8,8 @@
   # URL to fetch.
   url ? ""
 
+, name ? "factorio.tar.gz"
+
   # Login URL.
 , loginUrl ? "https://www.factorio.com/login"
 
@@ -16,11 +18,9 @@
 }:
 
 stdenv.mkDerivation {
-  name = "factorio.tar.gz";
+  buildInputs = [ curl xidel ];
 
-  buildInputs = [ curl ];
-
-  inherit url loginUrl username password cacert;
+  inherit name url loginUrl username password cacert;
 
   builder = ./fetch.sh;
 

@@ -3,14 +3,14 @@
 assert interactive -> readline != null && ncurses != null;
 
 stdenv.mkDerivation {
-  name = "sqlite-3.12.2";
+  name = "sqlite-3.19.3";
 
   src = fetchurl {
-    url = "http://sqlite.org/2016/sqlite-autoconf-3120200.tar.gz";
-    sha1 = "b43c2e7238e54c50b95fbbd85c48792f4f39af8c";
+    url = "http://sqlite.org/2017/sqlite-autoconf-3190300.tar.gz";
+    sha256 = "00b3l2qglpl1inx21fckiwxnfq5xf6441flc79rqg7zdvh1rq4h6";
   };
 
-  outputs = [ "dev" "out" "bin" ];
+  outputs = [ "bin" "dev" "out" ];
 
   buildInputs = lib.optionals interactive [ readline ncurses ];
 
@@ -22,7 +22,9 @@ stdenv.mkDerivation {
     "-DSQLITE_ENABLE_JSON1"
     "-DSQLITE_ENABLE_FTS3"
     "-DSQLITE_ENABLE_FTS3_PARENTHESIS"
+    "-DSQLITE_ENABLE_FTS3_TOKENIZER"
     "-DSQLITE_ENABLE_FTS4"
+    "-DSQLITE_ENABLE_FTS5"
     "-DSQLITE_ENABLE_RTREE"
     "-DSQLITE_ENABLE_STMT_SCANSTATUS"
     "-DSQLITE_ENABLE_UNLOCK_NOTIFY"
@@ -44,6 +46,9 @@ stdenv.mkDerivation {
       ''$'#include <unistd.h>\nint main()\n{\n  pread64(0, NULL, 0, 0);\n  pwrite64(0, NULL, 0, 0);\n  return 0;\n}'; then
       export NIX_CFLAGS_COMPILE="$NIX_CFLAGS_COMPILE -DUSE_PREAD64 -D_LARGEFILE64_SOURCE"
     fi
+
+    # Necessary for FTS5 on Linux
+    export NIX_LDFLAGS="$NIX_LDFLAGS -lm"
 
     echo ""
     echo "NIX_CFLAGS_COMPILE = $NIX_CFLAGS_COMPILE"

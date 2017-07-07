@@ -28,7 +28,7 @@ let
     };
 
     # TODO: Add a "dev" output containing the header files.
-    outputs = [ "out" "man" "docdev" ];
+    outputs = [ "out" "man" "devdoc" ];
     setOutputFlags = false;
 
     patches =
@@ -36,7 +36,8 @@ let
         ./no-sys-dirs.patch
       ]
       ++ optional stdenv.isSunOS ./ld-shared.patch
-      ++ optional stdenv.isDarwin [ ./cpp-precomp.patch ];
+      ++ optional stdenv.isDarwin ./cpp-precomp.patch
+      ++ optional (stdenv.isDarwin && versionAtLeast version "5.24") ./sw_vers.patch;
 
     postPatch = ''
       pwd="$(type -P pwd)"
@@ -68,11 +69,14 @@ let
 
     enableParallelBuilding = true;
 
+    # FIXME needs gcc 4.9 in bootstrap tools
+    hardeningDisable = [ "stackprotector" ];
+
     preConfigure =
       ''
         configureFlags="$configureFlags -Dprefix=$out -Dman1dir=$out/share/man/man1 -Dman3dir=$out/share/man/man3"
-    '' + optionalString stdenv.isArm ''
-      configureFlagsArray=(-Dldflags="-lm -lrt")
+      '' + optionalString (stdenv.isArm || stdenv.isMips) ''
+        configureFlagsArray=(-Dldflags="-lm -lrt")
       '' + optionalString stdenv.isDarwin ''
         substituteInPlace hints/darwin.sh --replace "env MACOSX_DEPLOYMENT_TARGET=10.3" ""
       '' + optionalString (!enableThreading) ''
@@ -90,23 +94,23 @@ let
 
     passthru.libPrefix = "lib/perl5/site_perl";
 
-  # TODO: it seems like absolute paths to some coreutils is required.
-  postInstall =
-    ''
-      # Remove dependency between "out" and "man" outputs.
-      rm "$out"/lib/perl5/*/*/.packlist
+    # TODO: it seems like absolute paths to some coreutils is required.
+    postInstall =
+      ''
+        # Remove dependency between "out" and "man" outputs.
+        rm "$out"/lib/perl5/*/*/.packlist
 
-      # Remove dependencies on glibc and gcc
-      sed "/ *libpth =>/c    libpth => ' '," \
-        -i "$out"/lib/perl5/*/*/Config.pm
-      # TODO: removing those paths would be cleaner than overwriting with nonsense.
-      substituteInPlace "$out"/lib/perl5/*/*/Config_heavy.pl \
-        --replace "${libcInc}" /no-such-path \
-        --replace "${
-            if stdenv.cc.cc or null != null then stdenv.cc.cc else "/no-such-path"
-          }" /no-such-path \
-        --replace "$man" /no-such-path
-    ''; # */
+        # Remove dependencies on glibc and gcc
+        sed "/ *libpth =>/c    libpth => ' '," \
+          -i "$out"/lib/perl5/*/*/Config.pm
+        # TODO: removing those paths would be cleaner than overwriting with nonsense.
+        substituteInPlace "$out"/lib/perl5/*/*/Config_heavy.pl \
+          --replace "${libcInc}" /no-such-path \
+          --replace "${
+              if stdenv.cc.cc or null != null then stdenv.cc.cc else "/no-such-path"
+            }" /no-such-path \
+          --replace "$man" /no-such-path
+      ''; # */
 
     meta = {
       homepage = https://www.perl.org/;
@@ -118,17 +122,16 @@ let
 
 in rec {
 
-  perl = perl522;
-
-  perl520 = common {
-    version = "5.20.3";
-    sha256 = "0jlvpd5l5nk7lzfd4akdg1sw6vinbkj6izclyyr0lrbidfky691m";
-
-  };
+  perl = perl524;
 
   perl522 = common {
-    version = "5.22.2";
-    sha256 = "1hl3v85ggm027v9h2ycas4z5i3401s2k2l3qpnw8q5mahmiikbc1";
+    version = "5.22.3";
+    sha256 = "10q087l1ffdy3gpryr8z540jcnsr0dhm37raicyfqqkyvys1yd8v";
+  };
+
+  perl524 = common {
+    version = "5.24.1";
+    sha256 = "1bqqb5ghfj4486nqr77kgsd8aff6a289jy7n2cdkznwvn34qbhg6";
   };
 
 }

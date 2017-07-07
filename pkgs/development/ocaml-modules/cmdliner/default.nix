@@ -1,16 +1,15 @@
-{stdenv, fetchurl, ocaml, findlib, opam}:
+{ stdenv, fetchurl, ocaml, findlib, ocamlbuild, opam }:
 
 let
   pname = "cmdliner";
-  version = "0.9.8";
-  ocaml_version = (builtins.parseDrvName ocaml.name).version;
 in
 
-assert stdenv.lib.versionAtLeast ocaml_version "3.12";
+assert stdenv.lib.versionAtLeast ocaml.version "3.12";
 
-stdenv.mkDerivation {
+stdenv.mkDerivation rec {
 
   name = "ocaml-${pname}-${version}";
+  version = "0.9.8";
 
   src = fetchurl {
     url = "http://erratique.ch/software/${pname}/releases/${pname}-${version}.tbz";
@@ -18,23 +17,23 @@ stdenv.mkDerivation {
   };
 
   unpackCmd = "tar xjf $src";
-  buildInputs = [ ocaml findlib opam ];
+  nativeBuildInputs = [ ocamlbuild opam ];
+  buildInputs = [ ocaml findlib ];
 
   createFindlibDestdir = true;
 
   configurePhase = "ocaml pkg/git.ml";
   buildPhase     = "ocaml pkg/build.ml native=true native-dynlink=true";
   installPhase   = ''
-    opam-installer --script --prefix=$out ${pname}.install > install.sh
-    sh install.sh
-    ln -s $out/lib/${pname} $out/lib/ocaml/${ocaml_version}/site-lib/
+    opam-installer --script --prefix=$out | sh
+    ln -s $out/lib/${pname} $out/lib/ocaml/${ocaml.version}/site-lib/
   '';
 
   meta = with stdenv.lib; {
     homepage = http://erratique.ch/software/cmdliner;
     description = "An OCaml module for the declarative definition of command line interfaces";
     license = licenses.bsd3;
-    maintainers = [ maintainers.vbgl ];
     platforms = ocaml.meta.platforms or [];
+    maintainers = [ maintainers.vbgl ];
   };
 }

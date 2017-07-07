@@ -8,7 +8,7 @@
 , tzdata
 , cacert
 , glib
-, gtk
+, gtk2
 , atk
 , gdk_pixbuf
 , cairo
@@ -22,29 +22,34 @@
 , alsaLib
 }:
 
-stdenv.mkDerivation rec {
+let versionRec = { major = "13"; minor = "4"; patch = "0"; };
+in stdenv.mkDerivation rec {
   name = "citrix-receiver-${version}";
-  version = "13.3.0";
+  version = with versionRec; "${major}.${minor}.${patch}";
   homepage = https://www.citrix.com/downloads/citrix-receiver/linux/receiver-for-linux-latest.html;
 
   prefixWithBitness = if stdenv.is64bit then "linuxx64" else "linuxx86";
 
-  src = requireFile rec {
-    name = "${prefixWithBitness}-${version}.344519.tar.gz";
+  src = with versionRec; requireFile rec {
+    name = "${prefixWithBitness}-${version}.10109380.tar.gz";
     sha256 =
       if stdenv.is64bit
-      then "11l0s4f1si43qlxai053ps4nks7v4bahipsmcdpnrdzq0vps17ls"
-      else "0sbgkb9a3ss2n08lal7qk8pmxyqbvkm7jj7l995ddjaa6jbkr3fz";
+      then "133brs0sq6d0mgr19rc6ig1n9ahm3ryi23v5nrgqfh0hgxqcrrjb"
+      else "0r7jfl5yqv1s2npy8l9gsn0gbb82f6raa092ppkc8xy5pni5sh7l";
     message = ''
       In order to use Citrix Receiver, you need to comply with the Citrix EULA and download
       the ${if stdenv.is64bit then "64-bit" else "32-bit"} binaries, .tar.gz from:
 
       ${homepage}
 
+      (if you do not find version ${version} there, try at
+      https://www.citrix.com/downloads/citrix-receiver/legacy-receiver-for-linux/receiver-for-linux-latest-${major}-${minor}.html
+      or at https://www.citrix.com/downloads/citrix-receiver/ under "Earlier Versions of Receiver for Linux")
+
       Once you have downloaded the file, please use the following command and re-run the
       installation:
 
-      nix-prefetch-url file://${name}
+      nix-prefetch-url file://\$PWD/${name}
     '';
   };
 
@@ -56,13 +61,13 @@ stdenv.mkDerivation rec {
     makeWrapper
     busybox
     file
-    gtk
+    gtk2
     gdk_pixbuf
   ];
 
   libPath = stdenv.lib.makeLibraryPath [
     glib
-    gtk
+    gtk2
     atk
     gdk_pixbuf
     cairo
@@ -133,9 +138,10 @@ stdenv.mkDerivation rec {
     echo "Wrapping wfica..."
     mkdir "$out/bin"
 
-    makeWrapper "$ICAInstDir/wfica -icaroot $ICAInstDir" "$out/bin/wfica" \
+    makeWrapper "$ICAInstDir/wfica" "$out/bin/wfica" \
+      --add-flags "-icaroot $ICAInstDir" \
       --set ICAROOT "$ICAInstDir" \
-      --set GTK_PATH "${gtk}/lib/gtk-2.0:${gnome3.gnome_themes_standard}/lib/gtk-2.0" \
+      --set GTK_PATH "${gtk2.out}/lib/gtk-2.0:${gnome3.gnome_themes_standard}/lib/gtk-2.0" \
       --set GDK_PIXBUF_MODULE_FILE "$GDK_PIXBUF_MODULE_FILE" \
       --set LD_PRELOAD "${libredirect}/lib/libredirect.so" \
       --set LD_LIBRARY_PATH "$libPath" \

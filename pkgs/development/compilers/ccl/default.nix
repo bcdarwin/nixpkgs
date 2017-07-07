@@ -5,7 +5,7 @@ let
     /* TODO: there are also MacOS, FreeBSD and Windows versions */
     x86_64-linux = {
       arch = "linuxx86";
-      sha256 = "0d2vhp5n74yhwixnvlsnp7dzaf9aj6zd2894hr2728djyd8x9fx6";
+      sha256 = "0g6mkl207ri3ib9w85i9w0sv7srz784pbxidz0d95p6qkvg6shba";
       runtime = "lx86cl64";
       kernel = "linuxx8664";
     };
@@ -68,6 +68,7 @@ stdenv.mkDerivation rec {
     mkdir -p "$out/bin"
     echo -e '#!/bin/sh\n'"$out/share/ccl-installation/${CCL_RUNTIME}"' "$@"\n' > "$out"/bin/"${CCL_RUNTIME}"
     chmod a+x "$out"/bin/"${CCL_RUNTIME}"
+    ln -s "$out"/bin/"${CCL_RUNTIME}" "$out"/bin/ccl
   '';
 
   meta = with stdenv.lib; {

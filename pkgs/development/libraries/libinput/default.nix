@@ -3,6 +3,7 @@
 , documentationSupport ? false, doxygen ? null, graphviz ? null # Documentation
 , eventGUISupport ? false, cairo ? null, glib ? null, gtk3 ? null # GUI event viewer support
 , testsSupport ? false, check ? null, valgrind ? null
+, autoconf, automake
 }:
 
 assert documentationSupport -> doxygen != null && graphviz != null;
@@ -15,14 +16,15 @@ in
 
 with stdenv.lib;
 stdenv.mkDerivation rec {
-  name = "libinput-1.3.0";
+  name = "libinput-${version}";
+  version = "1.7.3";
 
   src = fetchurl {
     url = "http://www.freedesktop.org/software/libinput/${name}.tar.xz";
-    sha256 = "1sn1s1bz06fa49izqkqf519sjclsvhf42i6slzx1w5hx4vxpb2lr";
+    sha256 = "07fbzxddvhjcch43hdxb24sj7ri96zzpcjalvsicmw0i4wnn2v89";
   };
 
-  outputs = [ "dev" "out" ];
+  outputs = [ "out" "dev" ];
 
   configureFlags = [
     (mkFlag documentationSupport "documentation")
@@ -32,12 +34,15 @@ stdenv.mkDerivation rec {
 
   nativeBuildInputs = [ pkgconfig ];
 
-  buildInputs = [ libevdev mtdev libwacom ]
+  buildInputs = [ libevdev mtdev libwacom autoconf automake ]
     ++ optionals eventGUISupport [ cairo glib gtk3 ]
     ++ optionals documentationSupport [ doxygen graphviz ]
     ++ optionals testsSupport [ check valgrind ];
 
   propagatedBuildInputs = [ udev ];
+
+  patches = [ ./udev-absolute-path.patch ];
+  patchFlags = [ "-p0" ];
 
   meta = {
     description = "Handles input devices in Wayland compositors and provides a generic X.Org input driver";

@@ -1,5 +1,7 @@
-{ stdenv, fetchurl, pkgconfig, gettext, perl, python
+{ stdenv, hostPlatform, fetchurl, pkgconfig, gettext, perl, python
 , libiconv, libintlOrEmpty, zlib, libffi, pcre, libelf
+# use utillinuxMinimal to avoid circular dependency (utillinux, systemd, glib)
+, utillinuxMinimal ? null
 
 # this is just for tests (not in closure of any regular package)
 , coreutils, dbus_daemon, libxml2, tzdata, desktop_file_utils, shared_mime_info, doCheck ? false
@@ -7,7 +9,8 @@
 
 with stdenv.lib;
 
-assert stdenv.isFreeBSD || stdenv.isDarwin || stdenv.cc.isGNU;
+assert stdenv.isFreeBSD || stdenv.isDarwin || stdenv.cc.isGNU || hostPlatform.isCygwin;
+assert stdenv.isLinux -> utillinuxMinimal != null;
 
 # TODO:
 # * Add gio-module-fam
@@ -39,7 +42,7 @@ let
     ln -sr -t "''${!outputInclude}/include/" "''${!outputInclude}"/lib/*/include/* 2>/dev/null || true
   '';
 
-  ver_maj = "2.48";
+  ver_maj = "2.52";
   ver_min = "1";
 in
 
@@ -48,17 +51,18 @@ stdenv.mkDerivation rec {
 
   src = fetchurl {
     url = "mirror://gnome/sources/glib/${ver_maj}/${name}.tar.xz";
-    sha256 = "74411bff489cb2a3527bac743a51018841a56a4d896cc1e0d0d54f8166a14612";
+    sha256 = "948c26b817f2d77e2a6cdd5082c60a51bf5dea854890286a1d5d4ccde5ce586f";
   };
 
   patches = optional stdenv.isDarwin ./darwin-compilation.patch ++ optional doCheck ./skip-timer-test.patch;
 
-  outputs = [ "dev" "out" "docdev" ];
+  outputs = [ "out" "dev" "devdoc" ];
   outputBin = "dev";
 
   setupHook = ./setup-hook.sh;
 
   buildInputs = [ libelf setupHook pcre ]
+    ++ optionals stdenv.isLinux [ utillinuxMinimal ] # for libmount
     ++ optionals doCheck [ tzdata libxml2 desktop_file_utils shared_mime_info ];
 
   nativeBuildInputs = [ pkgconfig gettext perl python ];
@@ -95,7 +99,12 @@ stdenv.mkDerivation rec {
     moveToOutput "share/glib-2.0" "$dev"
     substituteInPlace "$dev/bin/gdbus-codegen" --replace "$out" "$dev"
     sed -i "$dev/bin/glib-gettextize" -e "s|^gettext_dir=.*|gettext_dir=$dev/share/glib-2.0/gettext|"
-  '';
+  ''
+    # This file is *included* in gtk3 and would introduce runtime reference via __FILE__.
+    + ''
+      sed '1i#line 1 "${name}/include/glib-2.0/gobject/gobjectnotifyqueue.c"' \
+        -i "$dev"/include/glib-2.0/gobject/gobjectnotifyqueue.c
+    '';
 
   inherit doCheck;
   preCheck = optionalString doCheck
@@ -128,7 +137,7 @@ stdenv.mkDerivation rec {
     description = "C library of programming buildings blocks";
     homepage    = http://www.gtk.org/;
     license     = licenses.lgpl2Plus;
-    maintainers = with maintainers; [ lovek323 raskin urkud ];
+    maintainers = with maintainers; [ lovek323 raskin ];
     platforms   = platforms.unix;
 
     longDescription = ''

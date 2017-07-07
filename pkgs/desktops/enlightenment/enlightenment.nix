@@ -1,22 +1,31 @@
-{ stdenv, fetchurl, pkgconfig, efl, elementary, xcbutilkeysyms, libXrandr, libXdmcp, libxcb,
-libffi, pam, alsaLib, luajit, bzip2, libuuid, libpthreadstubs, gdbm, libcap, mesa_glu
-, xkeyboard_config }:
+{ stdenv, fetchurl, pkgconfig, efl, xcbutilkeysyms, libXrandr, libXdmcp,
+libxcb, libffi, pam, alsaLib, luajit, bzip2, libpthreadstubs, gdbm, libcap,
+mesa_glu , xkeyboard_config }:
 
 stdenv.mkDerivation rec {
   name = "enlightenment-${version}";
-  version = "0.20.8";
+  version = "0.21.8";
+
   src = fetchurl {
     url = "http://download.enlightenment.org/rel/apps/enlightenment/${name}.tar.xz";
-    sha256 = "17fi3frq4a73i0x7v7244g9m0fbjfamw0cfb4zhqs2rp1z8nq1iy";
+    sha256 = "0cjjiip12hd8bfjl9ccl3vzl81pxh1wpymxk2yvrzf6ap5girhps";
   };
 
   nativeBuildInputs = [ pkgconfig ];
 
-  buildInputs = [ efl elementary libXdmcp libxcb
-    xcbutilkeysyms libXrandr libffi pam alsaLib luajit bzip2 libuuid
-    libpthreadstubs gdbm ] ++ stdenv.lib.optionals stdenv.isLinux [ libcap ];
+  buildInputs = [
+    efl libXdmcp libxcb xcbutilkeysyms libXrandr libffi pam alsaLib
+    luajit bzip2 libpthreadstubs gdbm
+  ] ++
+    stdenv.lib.optionals stdenv.isLinux [ libcap ];
 
-  NIX_CFLAGS_COMPILE = [ "-I${efl}/include/eo-1" "-I${efl}/include/emile-1" "-I${libuuid}/include/uuid" ];
+  NIX_CFLAGS_COMPILE = [
+    "-I${efl}/include/ecore-imf-1"
+    "-I${efl}/include/emile-1"
+    "-I${efl}/include/eo-1"
+    "-I${efl}/include/ethumb-1"
+    "-I${efl}/include/ethumb-client-1"
+  ];
 
   preConfigure = ''
     export USER_SESSION_DIR=$prefix/lib/systemd/user
@@ -33,20 +42,20 @@ stdenv.mkDerivation rec {
   # this is a hack and without this cpufreq module is not working. does the following:
   #   1. moves the "freqset" binary to "e_freqset",
   #   2. linkes "e_freqset" to enlightenment/bin so that,
-  #   3. setuidPrograms detects it and makes appropriate stuff to /var/setuid-wrappers/e_freqset,
-  #   4. and finaly, linkes /var/setuid-wrappers/e_freqset to original destination where enlightenment wants it
+  #   3. wrappers.setuid detects it and places wrappers in /run/wrappers/bin/e_freqset,
+  #   4. and finally, links /run/wrappers/bin/e_freqset to original destination where enlightenment wants it
   postInstall = ''
     export CPUFREQ_DIRPATH=`readlink -f $out/lib/enlightenment/modules/cpufreq/linux-gnu-*`;
     mv $CPUFREQ_DIRPATH/freqset $CPUFREQ_DIRPATH/e_freqset
     ln -sv $CPUFREQ_DIRPATH/e_freqset $out/bin/e_freqset
-    ln -sv /var/setuid-wrappers/e_freqset $CPUFREQ_DIRPATH/freqset
+    ln -sv /run/wrappers/bin/e_freqset $CPUFREQ_DIRPATH/freqset
   '';
 
-  meta = {
+  meta = with stdenv.lib; {
     description = "The Compositing Window Manager and Desktop Shell";
     homepage = http://enlightenment.org/;
-    maintainers = with stdenv.lib.maintainers; [ matejc tstrobel ftrvxmtrx ];
-    platforms = stdenv.lib.platforms.linux;
-    license = stdenv.lib.licenses.bsd2;
+    license = licenses.bsd2;
+    platforms = platforms.linux;
+    maintainers = with maintainers; [ matejc tstrobel ftrvxmtrx romildo ];
   };
 }

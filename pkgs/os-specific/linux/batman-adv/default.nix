@@ -1,16 +1,16 @@
 { stdenv, fetchurl, kernel }:
 
-#assert stdenv.lib.versionOlder kernel.version "3.17";
-
-let base = "batman-adv-2016.0"; in
+let base = "batman-adv-2017.1"; in
 
 stdenv.mkDerivation rec {
   name = "${base}-${kernel.version}";
 
   src = fetchurl {
     url = "http://downloads.open-mesh.org/batman/releases/${base}/${base}.tar.gz";
-    sha256 = "0r5faf12ifpj8h1fklkzvy4ck359cadk8xh1l3n7vimh67hxbxbz";
+    sha256 = "05cck0mlg8xsvbra69x6i25xclsq1xc49dggxq81gi086c14h67c";
   };
+
+  hardeningDisable = [ "pic" ];
 
   preBuild = ''
     makeFlags="KERNELPATH=${kernel.dev}/lib/modules/${kernel.modDirVersion}/build"

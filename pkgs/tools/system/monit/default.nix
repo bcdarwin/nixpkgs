@@ -1,15 +1,15 @@
-{stdenv, fetchurl, openssl, bison, flex, pam, usePAM ? stdenv.isLinux }:
+{stdenv, fetchurl, openssl, bison, flex, pam, zlib, usePAM ? stdenv.isLinux }:
 
 stdenv.mkDerivation rec {
-  name = "monit-5.10";
-  
+  name = "monit-5.20.0";
+
   src = fetchurl {
     url = "${meta.homepage}dist/${name}.tar.gz";
-    sha256 = "0lwlils6b59kr6zg328q113c7mrpggqydpq4l6j52sqv3dd1b49p";
+    sha256 = "13drg4k9r9drn7bpj3n04kkf1l29q05jdccdar6yc6hcqmg3kb7b";
   };
 
   nativeBuildInputs = [ bison flex ];
-  buildInputs = [ openssl ] ++ stdenv.lib.optionals usePAM [ pam ];
+  buildInputs = [ openssl zlib.dev ] ++ stdenv.lib.optionals usePAM [ pam ];
 
   configureFlags = [
     "--with-ssl-incl-dir=${openssl.dev}/include"
@@ -21,5 +21,6 @@ stdenv.mkDerivation rec {
     description = "Monitoring system";
     license = stdenv.lib.licenses.agpl3;
     maintainers = with stdenv.lib.maintainers; [ raskin wmertens ];
+    platforms = with stdenv.lib.platforms; linux;
   };
 }

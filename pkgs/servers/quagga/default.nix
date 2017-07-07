@@ -1,19 +1,20 @@
-{ stdenv, fetchurl, libcap, libnl, readline, net_snmp, less, perl, texinfo }:
+{ stdenv, fetchurl, libcap, libnl, readline, net_snmp, less, perl, texinfo,
+  pkgconfig, c-ares }:
 
 stdenv.mkDerivation rec {
   name = "quagga-${version}";
-  version = "1.0.20160315";
+  version = "1.2.1";
 
   src = fetchurl {
     url = "mirror://savannah/quagga/${name}.tar.gz";
-    sha256 = "0qrjhp6l1hw35jrvcwyl0df4zjx1kqhrsafx307i6pzgs2xbgzr1";
+    sha256 = "1kgvcr9cfgys5asvb5lh5h95silkr624apqm5x68xva19xfvmpda";
   };
 
   buildInputs =
-    [ readline net_snmp ]
+    [ readline net_snmp c-ares ]
     ++ stdenv.lib.optionals stdenv.isLinux [ libcap libnl ];
 
-  nativeBuildInputs = [ perl texinfo ];
+  nativeBuildInputs = [ pkgconfig perl texinfo ];
 
   configureFlags = [
     "--sysconfdir=/etc/quagga"

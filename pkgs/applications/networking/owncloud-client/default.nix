@@ -1,33 +1,27 @@
-{ stdenv, fetchurl, cmake, qt4, pkgconfig, qtkeychain, sqlite }:
+{ stdenv, fetchurl, cmake, pkgconfig, qtbase, qtwebkit, qtkeychain, sqlite }:
 
 stdenv.mkDerivation rec {
-  name = "owncloud-client" + "-" + version;
-
-  version = "2.1.1";
+  name = "owncloud-client-${version}";
+  version = "2.3.1";
 
   src = fetchurl {
     url = "https://download.owncloud.com/desktop/stable/owncloudclient-${version}.tar.xz";
-    sha256 = "4e7cfeb72ec565392e7968f352c4a7f0ef2988cc577ebdfd668a3887d320b1cb";
+    sha256 = "051rky4rpm73flxxkhfdxqq23ncnk4ixhscbg74w82sa4d93f54k";
   };
 
-  buildInputs =
-    [ cmake qt4 pkgconfig qtkeychain sqlite];
+  nativeBuildInputs = [ pkgconfig cmake ];
+  buildInputs = [ qtbase qtwebkit qtkeychain sqlite ];
 
-  #configurePhase = ''
-  #  mkdir build
-  #  cd build
-  #  cmake -DBUILD_WITH_QT4=on \
-  #        -DCMAKE_INSTALL_PREFIX=$out \
-  #        -DCMAKE_BUILD_TYPE=Release \
-  #        ..
-  #'';
+  cmakeFlags = [
+    "-UCMAKE_INSTALL_LIBDIR"
+  ];
 
   enableParallelBuilding = true;
 
-  meta = {
+  meta = with stdenv.lib; {
     description = "Synchronise your ownCloud with your computer using this desktop client";
     homepage = https://owncloud.org;
-    maintainers = with stdenv.lib.maintainers; [ qknight ];
-    meta.platforms = stdenv.lib.platforms.unix;
+    maintainers = [ maintainers.qknight ];
+    platforms = platforms.unix;
   };
 }

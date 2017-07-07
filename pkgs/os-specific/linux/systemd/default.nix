@@ -1,34 +1,25 @@
-{ stdenv, fetchFromGitHub, pkgconfig, intltool, gperf, libcap, kmod
+{ stdenv, fetchFromGitHub, fetchpatch, pkgconfig, intltool, gperf, libcap, kmod
 , zlib, xz, pam, acl, cryptsetup, libuuid, m4, utillinux, libffi
 , glib, kbd, libxslt, coreutils, libgcrypt, libgpgerror, libapparmor, audit, lz4
 , kexectools, libmicrohttpd, linuxHeaders ? stdenv.cc.libc.linuxHeaders, libseccomp
 , iptables, gnu-efi
 , autoreconfHook, gettext, docbook_xsl, docbook_xml_dtd_42, docbook_xml_dtd_45
-, enableKDbus ? false
 }:
 
 assert stdenv.isLinux;
 
 stdenv.mkDerivation rec {
-  version = "230";
+  version = "233";
   name = "systemd-${version}";
 
   src = fetchFromGitHub {
-    owner = "NixOS";
+    owner = "nixos";
     repo = "systemd";
-    rev = "4ccee551f2ba8383c8b9bd06590a3cd1dfdf690f";
-    sha256 = "1i4my5z7f8g5bykv1vxyw1az66s087lfqrck79kdm4hgvb4lsk6y";
+    rev = "72782e7ad96f9da9b0e5873f87a64007068cee06";
+    sha256 = "1cj20zrfr8g0vkxiv3h9bbd89xbj3mrsij3rjr1lbh4nkl5mcwpa";
   };
 
-  patches = [ ./hwdb-location.diff ];
-
-  /* gave up for now!
-  outputs = [ "out" "libudev" "doc" ]; # maybe: "dev"
-  # note: there are many references to ${systemd}/...
-  outputDev = "out";
-  propagatedBuildOutputs = "libudev";
-  */
-  outputs = [ "out" "man" ];
+  outputs = [ "out" "lib" "man" "dev" ];
 
   buildInputs =
     [ linuxHeaders pkgconfig intltool gperf libcap kmod xz pam acl
@@ -53,7 +44,6 @@ stdenv.mkDerivation rec {
       "--with-dbussystemservicedir=$(out)/share/dbus-1/system-services"
       "--with-dbussessionservicedir=$(out)/share/dbus-1/services"
       "--with-tty-gid=3" # tty in NixOS has gid 3
-      "--enable-compat-libs" # get rid of this eventually
       "--disable-tests"
 
       "--enable-lz4"
@@ -72,7 +62,7 @@ stdenv.mkDerivation rec {
       "--disable-ldconfig"
       "--disable-smack"
 
-      "--enable-gnuefi"
+      (if stdenv.isArm then "--disable-gnuefi" else "--enable-gnuefi")
       "--with-efi-libdir=${gnu-efi}/lib"
       "--with-efi-includedir=${gnu-efi}/include"
       "--with-efi-ldsdir=${gnu-efi}/lib"
@@ -80,7 +70,9 @@ stdenv.mkDerivation rec {
       "--with-sysvinit-path="
       "--with-sysvrcnd-path="
       "--with-rc-local-script-path-stop=/etc/halt.local"
-    ] ++ (if enableKDbus then [ "--enable-kdbus" ] else [ "--disable-kdbus" ]);
+    ];
+
+  hardeningDisable = [ "stackprotector" ];
 
   preConfigure =
     ''
@@ -99,7 +91,8 @@ stdenv.mkDerivation rec {
           --replace /bin/echo ${coreutils}/bin/echo \
           --replace /bin/cat ${coreutils}/bin/cat \
           --replace /sbin/sulogin ${utillinux.bin}/sbin/sulogin \
-          --replace /usr/lib/systemd/systemd-fsck $out/lib/systemd/systemd-fsck
+          --replace /usr/lib/systemd/systemd-fsck $out/lib/systemd/systemd-fsck \
+          --replace /bin/plymouth /run/current-system/sw/bin/plymouth # To avoid dependency
       done
 
       substituteInPlace src/journal/catalog.c \
@@ -109,16 +102,6 @@ stdenv.mkDerivation rec {
 
       #export NIX_CFLAGS_LINK+=" -Wl,-rpath,$libudev/lib"
     '';
-
-  /*
-  makeFlags = [
-    "udevlibexecdir=$(libudev)/lib/udev"
-    # udev rules refer to $out, and anything but libs should probably go to $out
-    "udevrulesdir=$(out)/lib/udev/rules.d"
-    "udevhwdbdir=$(out)/lib/udev/hwdb.d"
-  ];
-  */
-
 
   PYTHON_BINARY = "${coreutils}/bin/env python"; # don't want a build time dependency on Python
 
@@ -171,26 +154,18 @@ stdenv.mkDerivation rec {
 
       rm -rf $out/etc/rpm
 
-      rm $out/lib/*.la
+      rm $lib/lib/*.la
 
       # "kernel-install" shouldn't be used on NixOS.
       find $out -name "*kernel-install*" -exec rm {} \;
-    ''; # */
-  /*
-      # Move lib(g)udev to a separate output. TODO: maybe split them up
-      #   to avoid libudev pulling glib
-      mkdir -p "$libudev/lib"
-      mv "$out"/lib/lib{,g}udev* "$libudev/lib/"
 
-      for i in "$libudev"/lib/*.la; do
-        substituteInPlace $i --replace "$out" "$libudev"
-      done
-      for i in "$out"/lib/pkgconfig/{libudev,gudev-1.0}.pc; do
-        substituteInPlace $i --replace "libdir=$out" "libdir=$libudev"
-      done
-  */
+      # Keep only libudev and libsystemd in the lib output.
+      mkdir -p $out/lib
+      mv $lib/lib/security $lib/lib/libnss* $out/lib/
+    ''; # */
 
   enableParallelBuilding = true;
+
   /*
   # some libs fail to link to liblzma and/or libffi
   postFixup = let extraLibs = stdenv.lib.makeLibraryPath [ xz.out libffi.out zlib.out ];

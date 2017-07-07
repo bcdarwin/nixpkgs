@@ -1,4 +1,4 @@
-{ stdenv, fetchurl
+{ stdenv, fetchurl, fetchFromGitHub
 , ncurses
 , texinfo
 , gettext ? null
@@ -10,31 +10,46 @@ assert enableNls -> (gettext != null);
 
 with stdenv.lib;
 
-stdenv.mkDerivation rec {
-  name = "nano-${version}";
-  version = "2.5.3";
-  src = fetchurl {
-    url = "mirror://gnu/nano/${name}.tar.gz";
-    sha256 = "1vhjrcydcfxqq1719vcsvqqnbjbq2523m00dhzag5vwzkc961c5j";
+let
+  nixSyntaxHighlight = fetchFromGitHub {
+    owner = "seitz";
+    repo = "nanonix";
+    rev = "17e0de65e1cbba3d6baa82deaefa853b41f5c161";
+    sha256 = "1g51h65i31andfs2fbp1v3vih9405iknqn11fzywjxji00kjqv5s";
   };
+
+in stdenv.mkDerivation rec {
+  name = "nano-${version}";
+  version = "2.8.5";
+
+  src = fetchurl {
+    url = "mirror://gnu/nano/${name}.tar.xz";
+    sha256 = "1hl9gni3qmblr062a7w6vz16gvxbswgc5c19c923ja0bk48vyhyb";
+  };
+
   nativeBuildInputs = [ texinfo ] ++ optional enableNls gettext;
   buildInputs = [ ncurses ];
+
   outputs = [ "out" "info" ];
+
   configureFlags = ''
     --sysconfdir=/etc
     ${optionalString (!enableNls) "--disable-nls"}
     ${optionalString enableTiny "--enable-tiny"}
   '';
 
-  postPatch = stdenv.lib.optionalString stdenv.isDarwin ''
-    substituteInPlace src/text.c --replace "__time_t" "time_t"
+  postInstall = ''
+    cp ${nixSyntaxHighlight}/nix.nanorc $out/share/nano/
   '';
 
   meta = {
-    homepage = http://www.nano-editor.org/;
+    homepage = https://www.nano-editor.org/;
     description = "A small, user-friendly console text editor";
     license = licenses.gpl3Plus;
-    maintainers = with maintainers; [ joachifm ];
+    maintainers = with maintainers; [
+      jgeerds
+      joachifm
+    ];
     platforms = platforms.all;
   };
 }

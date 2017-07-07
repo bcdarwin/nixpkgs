@@ -1,7 +1,8 @@
-{ stdenv, fetchFromGitHub, buildPythonApplication, sqlite3 }:
+{ stdenv, fetchFromGitHub, pythonPackages,
+  asciidoc, libxml2, libxslt, docbook_xml_xslt }:
 
-buildPythonApplication rec {
-  version = "6.7.0";
+pythonPackages.buildPythonApplication rec {
+  version = "7.1.1";
   name = "offlineimap-${version}";
   namePrefix = "";
 
@@ -9,14 +10,24 @@ buildPythonApplication rec {
     owner = "OfflineIMAP";
     repo = "offlineimap";
     rev = "v${version}";
-    sha256 = "127d7zy8h2h67bvrc4x98wcfskmkxislsv9qnvpgxlc56vnsrg54";
+    sha256 = "12fv6fzi3cb0hkvs4h5vj2i440d85wzjjyjl90zvyxvlfy0pmljl";
   };
+
+  postPatch = ''
+    # Skip xmllint to stop failures due to no network access
+    sed -i docs/Makefile -e "s|a2x -v -d |a2x -L -v -d |"
+  '';
 
   doCheck = false;
 
-  propagatedBuildInputs = [
-    sqlite3
-  ];
+  nativeBuildInputs = [ asciidoc libxml2 libxslt docbook_xml_xslt ];
+  propagatedBuildInputs = [ pythonPackages.six ];
+
+  postInstall = ''
+    make -C docs man
+    install -D -m 644 docs/offlineimap.1 ''${!outputMan}/share/man/man1/offlineimap.1
+    install -D -m 644 docs/offlineimapui.7 ''${!outputMan}/share/man/man7/offlineimapui.7
+  '';
 
   meta = {
     description = "Synchronize emails between two repositories, so that you can read the same mailbox from multiple computers";

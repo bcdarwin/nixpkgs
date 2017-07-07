@@ -63,11 +63,14 @@ in stdenv.mkDerivation {
     cp -v tinyxml.pc $out/lib/pkgconfig/
 
     cp -v docs/* $out/share/doc/tinyxml/
+  '' + stdenv.lib.optionalString stdenv.isDarwin ''
+    install_name_tool -id $out/lib/libtinyxml.dylib $out/lib/libtinyxml.dylib
   '';
 
   meta = {
     description = "Simple, small, C++ XML parser that can be easily integrating into other programs";
     homepage = "http://www.grinninglizard.com/tinyxml/index.html";
     license = stdenv.lib.licenses.free;
+    platforms = stdenv.lib.platforms.unix;
   };
 }

@@ -1,29 +1,36 @@
-{ stdenv, fetchurl, pkgconfig, zlib, ncurses ? null, perl ? null, pam, systemd }:
+{ lib, stdenv, fetchurl, pkgconfig, zlib, fetchpatch, shadow
+, ncurses ? null, perl ? null, pam, systemd, minimal ? false }:
 
-stdenv.mkDerivation rec {
+let
+  version = lib.concatStringsSep "." ([ majorVersion ]
+    ++ lib.optional (patchVersion != "") patchVersion);
+  majorVersion = "2.30";
+  patchVersion = "";
+
+  fstrimPatch = fetchpatch {
+    url = "https://git.kernel.org/pub/scm/utils/util-linux/util-linux.git/patch/?id=155d48f590a50bb5dc265162ff2f9a971daed543";
+    sha256 = "1wj0fj3iwaimr6p8wxg6l2i1hjyrfgcwcxziyxqz8acxba7k6zxh";
+  };
+in stdenv.mkDerivation rec {
   name = "util-linux-${version}";
-  version = "2.28";
 
   src = fetchurl {
-    url = "mirror://kernel/linux/utils/util-linux/v${version}/${name}.tar.xz";
-    sha256 = "1fql204qn3098j34yd358l85ffp7a4kqjf7jf1qk2b4al7i4fn1r";
+    url = "mirror://kernel/linux/utils/util-linux/v${majorVersion}/${name}.tar.xz";
+    sha256 = "13d0ax8bcapga8phj2nclx86w57ddqxbr98ajibpzjq6d7zs8262";
   };
 
   patches = [
     ./rtcwake-search-PATH-for-shutdown.patch
+    fstrimPatch
   ];
 
-  outputs = [ "bin" "out" "man" ]; # TODO: $bin is kept the first for now
-  # due to lots of ${utillinux}/bin occurences and headers being rather small
-  outputDev = "bin";
+  outputs = [ "bin" "dev" "out" "man" ];
 
-
-  #FIXME: make it also work on non-nixos?
   postPatch = ''
-    # Substituting store paths would create a circular dependency on systemd
     substituteInPlace include/pathnames.h \
-      --replace "/bin/login" "/run/current-system/sw/bin/login" \
-      --replace "/sbin/shutdown" "/run/current-system/sw/bin/shutdown"
+      --replace "/bin/login" "${shadow}/bin/login"
+    substituteInPlace sys-utils/eject.c \
+      --replace "/bin/umount" "$out/bin/umount"
   '';
 
   crossAttrs = {
@@ -31,39 +38,40 @@ stdenv.mkDerivation rec {
     preConfigure = "export scanf_cv_type_modifier=ms";
   };
 
+  preConfigure = lib.optionalString (systemd != null) ''
+    configureFlags+=" --with-systemd --with-systemdsystemunitdir=$bin/lib/systemd/system/"
+  '';
+
   # !!! It would be better to obtain the path to the mount helpers
   # (/sbin/mount.*) through an environment variable, but that's
   # somewhat risky because we have to consider that mount can setuid
   # root...
-  configureFlags = ''
-    --enable-write
-    --enable-last
-    --enable-mesg
-    --disable-use-tty-group
-    --enable-fs-paths-default=/var/setuid-wrappers:/var/run/current-system/sw/bin:/sbin
-    ${if ncurses == null then "--without-ncurses" else ""}
-    ${if systemd == null then "" else ''
-      --with-systemd
-      --with-systemdsystemunitdir=$out/lib/systemd/system/
-    ''}
-  '';
+  configureFlags = [
+    "--enable-write"
+    "--enable-last"
+    "--enable-mesg"
+    "--disable-use-tty-group"
+    "--enable-fs-paths-default=/run/wrappers/bin:/var/run/current-system/sw/bin:/sbin"
+    "--disable-makeinstall-setuid" "--disable-makeinstall-chown"
+  ]
+    ++ lib.optional (ncurses == null) "--without-ncurses";
 
   makeFlags = "usrbin_execdir=$(bin)/bin usrsbin_execdir=$(bin)/sbin";
 
   nativeBuildInputs = [ pkgconfig ];
   buildInputs =
     [ zlib pam ]
-    ++ stdenv.lib.optional (ncurses != null) ncurses
-    ++ stdenv.lib.optional (systemd != null) [ systemd pkgconfig ]
-    ++ stdenv.lib.optional (perl != null) perl;
+    ++ lib.filter (p: p != null) [ ncurses systemd perl ];
 
   postInstall = ''
     rm "$bin/bin/su" # su should be supplied by the su package (shadow)
+  '' + lib.optionalString minimal ''
+    rm -rf $out/share/{locale,doc,bash-completion}
   '';
 
   enableParallelBuilding = true;
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     homepage = https://www.kernel.org/pub/linux/utils/util-linux/;
     description = "A set of system utilities for Linux";
     license = licenses.gpl2; # also contains parts under more permissive licenses

@@ -1,25 +1,36 @@
-{ stdenv, python, fetchurl, makeWrapper, unzip }:
+{ stdenv, python, fetchPypi, fetchurl, makeWrapper, unzip }:
 
 let
-  wheel_source = fetchurl {
-    url = "https://pypi.python.org/packages/py2.py3/w/wheel/wheel-0.29.0-py2.py3-none-any.whl";
+  wheel_source = fetchPypi {
+    pname = "wheel";
+    version = "0.29.0";
+    format = "wheel";
     sha256 = "ea8033fc9905804e652f75474d33410a07404c1a78dd3c949a66863bd1050ebd";
   };
-  setuptools_source = fetchurl {
-    url = "https://pypi.python.org/packages/3.5/s/setuptools/setuptools-19.4-py2.py3-none-any.whl";
-    sha256 = "0801e6d862ca4ce24d918420d62f07ee2fe736dc016e3afa99d2103e7a02e9a6";
+  setuptools_source = fetchPypi {
+    pname = "setuptools";
+    version = "36.0.1";
+    format = "wheel";
+    sha256 = "f2900e560efc479938a219433c48f15a4ff4ecfe575a65de385eeb44f2425587";
   };
-  argparse_source = fetchurl {
-    url = "https://pypi.python.org/packages/2.7/a/argparse/argparse-1.4.0-py2.py3-none-any.whl";
-    sha256 = "0533cr5w14da8wdb2q4py6aizvbvsdbk3sj7m1jx9lwznvnlf5n3";
-  };
-in stdenv.mkDerivation rec {
-  name = "python-${python.version}-bootstrapped-pip-${version}";
-  version = "8.1.2";
 
-  src = fetchurl {
-    url = "https://pypi.python.org/packages/9c/32/004ce0852e0a127f07f358b715015763273799bd798956fa930814b60f39/pip-${version}-py2.py3-none-any.whl";
-    sha256 = "18cjrd66mn4a0gwa99zzs89lrb0xn4xmajdzya6zqd7v16cdsr34";
+  # TODO: Shouldn't be necessary anymore for pip > 9.0.1!
+  # https://github.com/NixOS/nixpkgs/issues/26392
+  # https://github.com/pypa/setuptools/issues/885
+  pkg_resources = fetchurl {
+    url = https://raw.githubusercontent.com/pypa/setuptools/v36.0.1/pkg_resources/__init__.py;
+    sha256 = "1wdnq3mammk75mifkdmmjx7yhnpydvnvi804na8ym4mj934l2jkv";
+  };
+
+in stdenv.mkDerivation rec {
+  pname = "pip";
+  version = "9.0.1";
+  name = "${python.libPrefix}-bootstrapped-${pname}-${version}";
+
+  src = fetchPypi {
+    inherit pname version;
+    format = "wheel";
+    sha256 = "690b762c0a8460c303c089d5d0be034fb15a5ea2b75bdf565f40421f542fefb0";
   };
 
   unpackPhase = ''
@@ -27,10 +38,9 @@ in stdenv.mkDerivation rec {
     unzip -d $out/${python.sitePackages} $src
     unzip -d $out/${python.sitePackages} ${setuptools_source}
     unzip -d $out/${python.sitePackages} ${wheel_source}
-  '' + stdenv.lib.optionalString (python.isPy26 or false) ''
-    unzip -d $out/${python.sitePackages} ${argparse_source}
+    # TODO: Shouldn't be necessary anymore for pip > 9.0.1!
+    cp ${pkg_resources} $out/${python.sitePackages}/pip/_vendor/pkg_resources/__init__.py
   '';
-
 
   patchPhase = ''
     mkdir -p $out/bin

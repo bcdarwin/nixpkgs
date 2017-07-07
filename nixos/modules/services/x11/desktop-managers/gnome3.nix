@@ -25,9 +25,8 @@ let
     '';
   };
 
-  nixos-gsettings-desktop-schemas = pkgs.stdenv.mkDerivation {
-    name = "nixos-gsettings-desktop-schemas";
-    buildCommand = ''
+  nixos-gsettings-desktop-schemas = pkgs.runCommand "nixos-gsettings-desktop-schemas" {}
+    ''
      mkdir -p $out/share/gsettings-schemas/nixos-gsettings-overrides/glib-2.0/schemas
      cp -rf ${gnome3.gsettings_desktop_schemas}/share/gsettings-schemas/gsettings-desktop-schemas*/glib-2.0/schemas/*.xml $out/share/gsettings-schemas/nixos-gsettings-overrides/glib-2.0/schemas
 
@@ -36,17 +35,16 @@ let
      chmod -R a+w $out/share/gsettings-schemas/nixos-gsettings-overrides
      cat - > $out/share/gsettings-schemas/nixos-gsettings-overrides/glib-2.0/schemas/nixos-defaults.gschema.override <<- EOF
        [org.gnome.desktop.background]
-       picture-uri='${pkgs.nixos-artwork}/share/artwork/gnome/Gnome_Dark.png'
+       picture-uri='${pkgs.nixos-artwork.wallpapers.gnome-dark}/share/artwork/gnome/Gnome_Dark.png'
 
        [org.gnome.desktop.screensaver]
-       picture-uri='${pkgs.nixos-artwork}/share/artwork/gnome/Gnome_Dark.png'
+       picture-uri='${pkgs.nixos-artwork.wallpapers.gnome-dark}/share/artwork/gnome/Gnome_Dark.png'
 
        ${cfg.extraGSettingsOverrides}
      EOF
 
      ${pkgs.glib.dev}/bin/glib-compile-schemas $out/share/gsettings-schemas/nixos-gsettings-overrides/glib-2.0/schemas/
     '';
-  };
 
 in {
 
@@ -55,7 +53,6 @@ in {
     services.xserver.desktopManager.gnome3 = {
       enable = mkOption {
         default = false;
-        example = true;
         description = "Enable Gnome 3 desktop manager.";
       };
 
@@ -78,16 +75,17 @@ in {
         type = types.listOf types.path;
         description = "List of packages for which gsettings are overridden.";
       };
-    };  
+
+      debug = mkEnableOption "gnome-session debug messages";
+    };
 
     environment.gnome3.packageSet = mkOption {
-      type = types.nullOr types.package;
       default = null;
-      example = literalExample "pkgs.gnome3_18";
+      example = literalExample "pkgs.gnome3_22";
       description = "Which GNOME 3 package set to use.";
       apply = p: if p == null then pkgs.gnome3 else p;
     };
-    
+
     environment.gnome3.excludePackages = mkOption {
       default = [];
       example = literalExample "[ pkgs.gnome3.totem ]";
@@ -106,9 +104,11 @@ in {
     services.geoclue2.enable = mkDefault true;
     services.gnome3.at-spi2-core.enable = true;
     services.gnome3.evolution-data-server.enable = true;
+    services.gnome3.gnome-disks.enable = mkDefault true;
     services.gnome3.gnome-documents.enable = mkDefault true;
     services.gnome3.gnome-keyring.enable = true;
     services.gnome3.gnome-online-accounts.enable = mkDefault true;
+    services.gnome3.gnome-terminal-server.enable = mkDefault true;
     services.gnome3.gnome-user-share.enable = mkDefault true;
     services.gnome3.gvfs.enable = true;
     services.gnome3.seahorse.enable = mkDefault true;
@@ -118,7 +118,16 @@ in {
     services.telepathy.enable = mkDefault true;
     networking.networkmanager.enable = mkDefault true;
     services.upower.enable = config.powerManagement.enable;
+    services.dbus.packages = mkIf config.services.printing.enable [ pkgs.system-config-printer ];
+    services.colord.enable = mkDefault true;
+    services.packagekit.enable = mkDefault true;
     hardware.bluetooth.enable = mkDefault true;
+    services.xserver.libinput.enable = mkDefault true; # for controlling touchpad settings via gnome control center
+    services.udev.packages = [ pkgs.gnome3.gnome_settings_daemon ];
+    systemd.packages = [ pkgs.gnome3.vino ];
+
+    # If gnome3 is installed, build vim for gtk3 too.
+    nixpkgs.config.vim.gui = "gtk3";
 
     fonts.fonts = [ pkgs.dejavu_fonts pkgs.cantarell_fonts ];
 
@@ -160,7 +169,7 @@ in {
           # Update user dirs as described in http://freedesktop.org/wiki/Software/xdg-user-dirs/
           ${pkgs.xdg-user-dirs}/bin/xdg-user-dirs-update
 
-          ${gnome3.gnome_session}/bin/gnome-session&
+          ${gnome3.gnome_session}/bin/gnome-session ${optionalString cfg.debug "--debug"} &
           waitPID=$!
         '';
       };
@@ -177,7 +186,7 @@ in {
     networking.networkmanager.basePackages =
       { inherit (pkgs) networkmanager modemmanager wpa_supplicant;
         inherit (gnome3) networkmanager_openvpn networkmanager_vpnc
-                         networkmanager_openconnect networkmanager_pptp
+                         networkmanager_openconnect networkmanager_fortisslvpn networkmanager_pptp
                          networkmanager_l2tp; };
 
     # Needed for themes and backgrounds

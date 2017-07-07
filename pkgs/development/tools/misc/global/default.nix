@@ -1,13 +1,14 @@
 { fetchurl, stdenv, libtool, makeWrapper
-, coreutils, ctags, ncurses, pythonPackages, sqlite, pkgconfig
+, coreutils, ctags, ncurses, pythonPackages, sqlite, universal-ctags, pkgconfig
 }:
 
 stdenv.mkDerivation rec {
-  name = "global-6.5.4";
+  name = "global-${version}";
+  version = "6.5.7";
 
   src = fetchurl {
     url = "mirror://gnu/global/${name}.tar.gz";
-    sha256 = "19hxajpwld6qx0faz4rzyh1hfs25ycjmws6bas8pavx4hskf05mg";
+    sha256 = "0cnd7a7d1pl46yk15q6mnr9i9w3xi8pxgchw4ia9njgr4jjqzh6r";
   };
 
   nativeBuildInputs = [ libtool makeWrapper ];
@@ -22,6 +23,7 @@ stdenv.mkDerivation rec {
     "--with-ncurses=${ncurses.dev}"
     "--with-sqlite3=${sqlite.dev}"
     "--with-exuberant-ctags=${ctags}/bin/ctags"
+    "--with-universal-ctags=${universal-ctags}/bin/ctags"
     "--with-posix-sort=${coreutils}/bin/sort"
   ];
 
@@ -32,8 +34,10 @@ stdenv.mkDerivation rec {
     cp -v *.el "$out/share/emacs/site-lisp"
 
     wrapProgram $out/bin/gtags \
+      --prefix GTAGSCONF : "$out/share/gtags/gtags.conf" \
       --prefix PYTHONPATH : "$(toPythonPath ${pythonPackages.pygments})"
     wrapProgram $out/bin/global \
+      --prefix GTAGSCONF : "$out/share/gtags/gtags.conf" \
       --prefix PYTHONPATH : "$(toPythonPath ${pythonPackages.pygments})"
   '';
 
@@ -51,7 +55,7 @@ stdenv.mkDerivation rec {
     '';
     homepage = http://www.gnu.org/software/global/;
     license = licenses.gpl3Plus;
-    maintainers = with maintainers; [ pSub ];
+    maintainers = with maintainers; [ pSub peterhoeg ];
     platforms = platforms.unix;
   };
 }

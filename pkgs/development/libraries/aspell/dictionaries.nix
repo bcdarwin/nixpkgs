@@ -28,6 +28,15 @@ let
 
 in {
 
+  ca = buildDict {
+    shortName = "ca-2.1.5-1";
+    fullName = "Catalan";
+    src = fetchurl {
+      url = mirror://gnu/aspell/dict/ca/aspell6-ca-2.1.5-1.tar.bz2;
+      sha256 = "1fb5y5kgvk25nlsfvc8cai978hg66x3pbp9py56pldc7vxzf9npb";
+    };
+  };
+
   cs = buildDict {
     shortName = "cs-20040614-1";
     fullName = "Czech";
@@ -56,11 +65,11 @@ in {
   };
 
   en = buildDict {
-    shortName = "en-7.1-0";
+    shortName = "en-2016.06.26-0";
     fullName = "English";
     src = fetchurl {
-      url = mirror://gnu/aspell/dict/en/aspell6-en-7.1-0.tar.bz2;
-      sha256 = "02ldfiny4iakgfgy4sdrzjqdzi7l1rmb6y30lv31kfy5x31g77gz";
+      url = mirror://gnu/aspell/dict/en/aspell6-en-2016.06.26-0.tar.bz2;
+      sha256 = "1clzsfq2cbgp6wvfr2qwfsd2nziipml5m5vqm45r748wczlxihv1";
     };
   };
 

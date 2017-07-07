@@ -1,18 +1,24 @@
-{ stdenv, fetchurl, unzip }:
+{ stdenv, fetchFromGitHub }:
 
 stdenv.mkDerivation rec {
   name = "iterm2-${version}";
-  version = "2.1.4";
+  version = "3.0.14";
 
-  src = fetchurl {
-    url = "https://iterm2.com/downloads/stable/iTerm2-2_1_4.zip";
-    sha256 = "1kb4j1p1kxj9dcsd34709bm2870ffzpq6jig6q9ixp08g0zbhqhh";
+  src = fetchFromGitHub {
+    owner = "gnachman";
+    repo = "iTerm2";
+    rev = "v${version}";
+    sha256 = "03m0ja11w9910z96yi8fzq3436y8xl14q031rdb2w3sapjd54qrj";
   };
 
-  buildInputs = [ unzip ];
+  patches = [ ./disable_updates.patch ];
+  postPatch = ''
+    sed -i -e 's/CODE_SIGN_IDENTITY = "Developer ID Application"/CODE_SIGN_IDENTITY = ""/g' ./iTerm2.xcodeproj/project.pbxproj
+  '';
+  makeFlagsArray = ["Deployment"];
   installPhase = ''
     mkdir -p "$out/Applications"
-    mv "$(pwd)" "$out/Applications/iTerm.app"
+    mv "build/Deployment/iTerm2.app" "$out/Applications/iTerm.app"
   '';
 
   meta = {

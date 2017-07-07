@@ -2,25 +2,44 @@
 , steam-runtime, steam-runtime-i686 ? null
 , withJava ? false
 , withPrimus ? false
+, extraPkgs ? pkgs: [ ] # extra packages to add to targetPkgs
 , nativeOnly ? false
 , runtimeOnly ? false
 , newStdcpp ? false
 }:
 
 let
-  commonTargetPkgs = pkgs: with pkgs; [
-    steamPackages.steam-fonts
-    # Errors in output without those
-    pciutils
-    python2
-    # Games' dependencies
-    xlibs.xrandr
-    which
-    # Needed by gdialog, including in the steam-runtime
-    perl
-    # Open URLs
-    xdg_utils
-  ];
+  commonTargetPkgs = pkgs: with pkgs;
+    let
+      primus2 = if newStdcpp then primus else primus.override {
+        stdenv = overrideInStdenv stdenv [ useOldCXXAbi ];
+        stdenv_i686 = overrideInStdenv pkgsi686Linux.stdenv [ useOldCXXAbi ];
+      };
+      tzdir = "${pkgs.tzdata}/share/zoneinfo";
+      # I'm not sure if this is the best way to add things like this
+      # to an FHSUserEnv
+      etc-zoneinfo = pkgs.runCommand "zoneinfo" {} ''
+        mkdir -p $out/etc
+        ln -s ${tzdir} $out/etc/zoneinfo
+        ln -s ${tzdir}/UTC $out/etc/localtime
+      '';
+    in [
+      steamPackages.steam-fonts
+      # Errors in output without those
+      pciutils
+      python2
+      # Games' dependencies
+      xlibs.xrandr
+      which
+      # Needed by gdialog, including in the steam-runtime
+      perl
+      # Open URLs
+      xdg_utils
+      # Zoneinfo
+      etc-zoneinfo
+    ] ++ lib.optional withJava jdk
+      ++ lib.optional withPrimus primus2
+      ++ extraPkgs pkgs;
 
 in buildFHSUserEnv rec {
   name = "steam";
@@ -29,12 +48,7 @@ in buildFHSUserEnv rec {
     steamPackages.steam
     # License agreement
     gnome3.zenity
-  ] ++ commonTargetPkgs pkgs
-    ++ lib.optional withJava jdk
-    ++ lib.optional withPrimus (primus.override {
-         stdenv = overrideInStdenv stdenv [ useOldCXXAbi ];
-         stdenv_i686 = overrideInStdenv pkgsi686Linux.stdenv [ useOldCXXAbi ];
-       });
+  ] ++ commonTargetPkgs pkgs;
 
   multiPkgs = pkgs: with pkgs; [
     # These are required by steam with proper errors
@@ -49,6 +63,9 @@ in buildFHSUserEnv rec {
     gst_all_1.gstreamer
     gst_all_1.gst-plugins-ugly
     libdrm
+    mono
+    xorg.xkeyboardconfig
+    xlibs.libpciaccess
 
     (steamPackages.steam-runtime-wrapped.override {
       inherit nativeOnly runtimeOnly newStdcpp;
@@ -72,6 +89,7 @@ in buildFHSUserEnv rec {
 
   profile = ''
     export STEAM_RUNTIME=/steamrt
+    export TZDIR=/etc/zoneinfo
   '';
 
   runScript = "steam";
