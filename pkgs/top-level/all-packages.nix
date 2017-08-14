@@ -33499,6 +33499,11 @@ with pkgs;
 
   conglomerate = callPackage ../applications/science/biology/conglomerate { };
 
+  connectome_workbench = callPackage ../applications/science/biology/connectome_workbench {
+    stdenv = gcc10StdenvCompat;
+    qt5 = qt514;
+  };
+
   dalfox = callPackage ../tools/security/dalfox { };
 
   dcm2niix = callPackage ../applications/science/biology/dcm2niix { };
