@@ -16,7 +16,9 @@ stdenv.mkDerivation rec {
   nativeBuildInputs = [ cmake ];
   buildInputs = [ libminc bicpl freeglut mesa_glu ];
 
-  cmakeFlags = [ "-DLIBMINC_DIR=${libminc}/lib" "-DBICPL_DIR=${bicpl}/lib" ];
+  cmakeFlags = [ "-DLIBMINC_DIR=${libminc}/lib"
+                 "-DBICPL_DIR=${bicpl}/lib"
+                 "-DBICGL_BUILD_SHARED_LIBS=ON" ];
 
   meta = with stdenv.lib; {
     homepage = "https://github.com/${owner}/${pname}";
