@@ -295,6 +295,8 @@ let
 
     functoria = callPackage ../development/ocaml-modules/functoria { };
 
+    functoria-runtime = callPackage ../development/ocaml-modules/functoria-runtime { };
+
     functory = callPackage ../development/ocaml-modules/functory { };
 
     gen = callPackage ../development/ocaml-modules/gen { };
@@ -327,6 +329,8 @@ let
       if lib.versionOlder "4.02" ocaml.version
       then callPackage ../development/ocaml-modules/ipaddr { }
       else ipaddr_p4;
+
+    macaddr = callPackage ../development/ocaml-modules/macaddr { };
 
     iso8601 = callPackage ../development/ocaml-modules/iso8601 { };
 
@@ -521,6 +525,10 @@ let
     mezzo = callPackage ../development/compilers/mezzo { };
 
     minisat = callPackage ../development/ocaml-modules/minisat { };
+
+    mirage-runtime = callPackage ../development/ocaml-modules/mirage-runtime { lwt = ocaml_lwt; };
+
+    mirage = callPackage ../development/ocaml-modules/mirage { };
 
     mlgmp =  callPackage ../development/ocaml-modules/mlgmp { };
 

@@ -1,19 +1,22 @@
-{ stdenv, fetchurl, buildDunePackage, sexplib, ppx_sexp_conv }:
+{ stdenv, fetchurl, buildDunePackage, ounit, ppx_sexp_conv, domain-name, macaddr, stdlib-shims }:
 
 buildDunePackage rec {
   pname = "ipaddr";
-  version = "2.8.0";
+  version = "4.0.0";
 
   src = fetchurl {
-    url = "https://github.com/mirage/ocaml-${pname}/archive/${version}.tar.gz";
-    sha256 = "1amb1pbm9ybpxy6190qygpj6nmbzzs2r6vx4xh5r6v89szx9rfxw";
+    url = "https://github.com/mirage/ocaml-${pname}/releases/download/v${version}/${pname}-v${version}.tbz";
+    sha256 = "0agwb4dy5agwviz4l7gpv280g1wcgfl921k1ykfwq80b46fbyjkg";
   };
 
-  propagatedBuildInputs = [ ppx_sexp_conv sexplib ];
+  checkInputs = [ ounit ppx_sexp_conv ];
+  propagatedBuildInputs = [ domain-name macaddr stdlib-shims ];
+
+  doCheck = true;
 
   meta = with stdenv.lib; {
     homepage = https://github.com/mirage/ocaml-ipaddr;
-    description = "A library for manipulation of IP (and MAC) address representations ";
+    description = "A library for manipulation of IP address representations";
     license = licenses.isc;
     maintainers = [ maintainers.ericbmerritt ];
   };
