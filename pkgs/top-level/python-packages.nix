@@ -3448,6 +3448,8 @@ in {
     cudaSupport = pkgs.config.cudaSupport or false;
   };
 
+  pytorch_geometric = callPackage ../development/python-modules/pytorch_geometric { };
+
   pyro-ppl = callPackage ../development/python-modules/pyro-ppl {};
 
   opt-einsum = if isPy27 then
