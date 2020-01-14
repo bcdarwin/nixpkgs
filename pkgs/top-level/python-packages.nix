@@ -2869,6 +2869,8 @@ in {
 
   gpyopt = callPackage ../development/python-modules/gpyopt { };
 
+  gpytorch = callPackage ../development/python-modules/gpytorch { };
+
   gitdb = callPackage ../development/python-modules/gitdb { };
 
   gitdb2 = throw "gitdb2 has been deprecated, use gitdb instead."; # added 2020-03-14
