@@ -2,15 +2,15 @@
 
 stdenv.mkDerivation rec {
   pname   = "libminc";
-  version = "2.4.03";
+  version = "unstable-2019-10-09";
 
   owner = "BIC-MNI";
 
   src = fetchFromGitHub {
     inherit owner;
     repo   = pname;
-    rev    = "release-${version}";
-    sha256 = "0kpmqs9df836ywsqj749qbsfavf5bnldblxrmnmxqq9pywc8yfrm";
+    rev    = "5044544825b4b3ca98eb7f20b3b87fc569f9bb02";
+    sha256 = "084l1k77qs3vqkvd2lk12927hvg8amcdmjr84yy1ky8f4vqa2kbj";
   };
 
   postPatch = ''
@@ -29,8 +29,8 @@ stdenv.mkDerivation rec {
   doCheck = !stdenv.isDarwin;
   checkPhase = ''
     export LD_LIBRARY_PATH="$(pwd)"  # see #22060
-    ctest -E 'ezminc_rw_test|minc_conversion' --output-on-failure
-    # ezminc_rw_test can't find libminc_io.so.5.2.0; minc_conversion hits netcdf compilation issue
+    ctest -E 'ezminc_rw_test' --output-on-failure
+    # ezminc_rw_test can't find libminc_io.so.5.2.0
   '';
 
   enableParallelBuilding = true;
