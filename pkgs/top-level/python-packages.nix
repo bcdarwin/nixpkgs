@@ -1027,6 +1027,8 @@ in {
 
   pathlib = callPackage ../development/python-modules/pathlib { };
 
+  patool = callPackage ../development/python-modules/patool { };
+
   pc-ble-driver-py = toPythonModule (callPackage ../development/python-modules/pc-ble-driver-py { });
 
   pcpp = callPackage ../development/python-modules/pcpp { };
