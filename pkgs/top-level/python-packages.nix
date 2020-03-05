@@ -2571,6 +2571,10 @@ in {
 
   dask-xgboost = callPackage ../development/python-modules/dask-xgboost { };
 
+  datalad = callPackage ../development/python-modules/datalad {
+    inherit (pkgs.gitAndTools) git-annex;
+  };
+
   datrie = callPackage ../development/python-modules/datrie { };
 
   heapdict = callPackage ../development/python-modules/heapdict { };
