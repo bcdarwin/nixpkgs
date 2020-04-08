@@ -19240,6 +19240,8 @@ in
 
   fritzing = libsForQt5.callPackage ../applications/science/electronics/fritzing { };
 
+  fsl = callPackage ../applications/science/biology/fsl { };
+
   fsv = callPackage ../applications/misc/fsv { };
 
   ft2-clone = callPackage ../applications/audio/ft2-clone { };
