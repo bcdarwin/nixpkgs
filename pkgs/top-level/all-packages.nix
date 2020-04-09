@@ -24466,6 +24466,9 @@ in
 
   sortmerna = callPackage ../applications/science/biology/sortmerna { };
 
+  spinalcordtoolbox = callPackage ../applications/science/biology/spinalcordtoolbox {
+    inherit (python3Packages) buildPythonPackage python pytest pytestcov numpy cryptography dipy h5py Keras matplotlib nibabel pandas psutil pyqt5 raven requests scipy scikitimage scikitlearn tensorflow_1 xlrd xlwt tqdm transforms3d urllib3; };
+
   stacks = callPackage ../applications/science/biology/stacks { };
 
   star = callPackage ../applications/science/biology/star { };
