@@ -7728,6 +7728,8 @@ in
     openssl = openssl_1_0_2;
   };
 
+  vv = callPackage ../applications/graphics/vv { };
+
   waifu2x-converter-cpp = callPackage ../tools/graphics/waifu2x-converter-cpp { };
 
   wakatime = pythonPackages.callPackage ../tools/misc/wakatime { };
