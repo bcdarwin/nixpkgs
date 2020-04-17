@@ -1295,6 +1295,11 @@ in {
 
   pystray = callPackage ../development/python-modules/pystray { };
 
+  pysurfer = pkgs.libsForQt5.callPackage ../development/python-modules/pysurfer {
+    inherit buildPythonPackage fetchPypi isPy27;
+    inherit (self) numpy scipy matplotlib mayavi nibabel;
+  };
+
   pytelegrambotapi = callPackage ../development/python-modules/pyTelegramBotAPI { };
 
   pytesseract = callPackage ../development/python-modules/pytesseract { };
