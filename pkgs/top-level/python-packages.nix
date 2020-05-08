@@ -3579,6 +3579,8 @@ in {
 
   pillowfight = callPackage ../development/python-modules/pillowfight { };
 
+  k3d = callPackage ../development/python-modules/k3d { };
+
   kaptan = callPackage ../development/python-modules/kaptan { };
 
   keepalive = callPackage ../development/python-modules/keepalive { };
