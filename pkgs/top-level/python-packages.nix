@@ -6059,6 +6059,8 @@ self: super: with self; {
 
   k-diffusion = callPackage ../development/python-modules/k-diffusion { };
 
+  k3d = callPackage ../development/python-modules/k3d { };
+
   k5test = callPackage ../development/python-modules/k5test {
     inherit (pkgs) krb5 findutils;
   };
