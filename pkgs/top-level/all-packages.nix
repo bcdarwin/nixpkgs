@@ -19776,6 +19776,8 @@ in
   freerdp = callPackage ../applications/networking/remote/freerdp {
     inherit libpulseaudio;
     inherit (gst_all_1) gstreamer gst-plugins-base gst-plugins-good;
+    inherit (darwin.apple_sdk.frameworks) Cocoa AudioToolbox MediaToolbox
+                                          AVFoundation Foundation CoreAudio CoreMedia;
   };
 
   freerdpUnstable = freerdp;

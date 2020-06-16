@@ -1,6 +1,7 @@
 { stdenv, lib, fetchFromGitHub, cmake, pkgconfig, alsaLib, ffmpeg, glib, openssl
 , pcre, zlib, libX11, libXcursor, libXdamage, libXext, libXi, libXinerama
 , libXrandr, libXrender, libXv, libXtst, libxkbcommon, libxkbfile, wayland
+, Cocoa, CoreAudio, CoreMedia, AudioToolbox, MediaToolbox, AVFoundation, Foundation, xib2nib
 , gstreamer, gst-plugins-base, gst-plugins-good, libunwind, orc, libxslt
 , libusb1, libpulseaudio ? null, cups ? null, pcsclite ? null, systemd ? null
 , buildServer ? true, nocaps ? false }:
@@ -48,7 +49,6 @@ in stdenv.mkDerivation rec {
 
   buildInputs = with lib;
     [
-      alsaLib
       cups
       ffmpeg
       glib
@@ -75,11 +75,24 @@ in stdenv.mkDerivation rec {
       orc
       pcre
       pcsclite
-      wayland
       zlib
-    ] ++ optional stdenv.isLinux systemd;
+    ] ++ optionals stdenv.isLinux [
+      alsaLib
+      systemd
+      wayland
+    ] ++ optionals stdenv.isDarwin [
+      Cocoa
+      AudioToolbox
+      MediaToolbox
+      AVFoundation
+      Foundation
+      CoreAudio
+      CoreMedia
+    ];
 
-  nativeBuildInputs = [ cmake pkgconfig ];
+  nativeBuildInputs = [
+    cmake pkgconfig
+  ] ++ lib.optional stdenv.isDarwin [ xib2nib ];
 
   doCheck = true;
 
