@@ -15866,6 +15866,8 @@ with pkgs;
 
   ccrtp = callPackage ../development/libraries/ccrtp { };
 
+  cctools = callPackage ../applications/science/misc/cctools { };  # TODO maybe rename to avoid confusion with darwin cctools
+
   cctz = callPackage ../development/libraries/cctz { };
 
   celt = callPackage ../development/libraries/celt {};
