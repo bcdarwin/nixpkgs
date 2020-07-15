@@ -12102,6 +12102,11 @@ in
 
   ccrtp = callPackage ../development/libraries/ccrtp { };
 
+  cctools = callPackage ../applications/science/misc/cctools {
+    stdenv = gcc7Stdenv;  # https://github.com/cooperative-computing-lab/cctools/issues/2326
+    swig = swig2;         # https://github.com/cooperative-computing-lab/cctools/issues/2353
+  };
+
   cctz = callPackage ../development/libraries/cctz { };
 
   celt = callPackage ../development/libraries/celt {};
