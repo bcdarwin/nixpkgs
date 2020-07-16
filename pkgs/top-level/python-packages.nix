@@ -970,6 +970,8 @@ in {
 
   mnist = callPackage ../development/python-modules/mnist { };
 
+  monai = callPackage ../development/python-modules/monai { };
+
   monkeyhex = callPackage ../development/python-modules/monkeyhex { };
 
   monty = callPackage ../development/python-modules/monty { };
