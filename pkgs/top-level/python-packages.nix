@@ -6262,6 +6262,8 @@ in {
 
   virtualenv = callPackage ../development/python-modules/virtualenv { };
 
+  visbrain = callPackage ../development/python-modules/visbrain { };
+
   vispy = callPackage ../development/python-modules/vispy { };
 
   vsts = callPackage ../development/python-modules/vsts { };
