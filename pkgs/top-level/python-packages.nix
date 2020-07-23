@@ -11846,6 +11846,8 @@ self: super: with self; {
 
   visitor = callPackage ../development/python-modules/visitor { };
 
+  visbrain = callPackage ../development/python-modules/visbrain { };
+
   vispy = callPackage ../development/python-modules/vispy { };
 
   vivisect = callPackage ../development/python-modules/vivisect {
