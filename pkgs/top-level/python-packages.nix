@@ -4412,6 +4412,8 @@ self: super: with self; {
 
   furo = callPackage ../development/python-modules/furo { };
 
+  fury = callPackage ../development/python-modules/fury { };
+
   fuse = callPackage ../development/python-modules/fuse-python {
     inherit (pkgs) fuse;
   };
