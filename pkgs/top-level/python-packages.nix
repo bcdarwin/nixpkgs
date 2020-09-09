@@ -2214,6 +2214,8 @@ in {
 
   furl = callPackage ../development/python-modules/furl { };
 
+  fury = callPackage ../development/python-modules/fury { };
+
   fuse = callPackage ../development/python-modules/fuse-python { inherit (pkgs) fuse pkgconfig; };
 
   fusepy = callPackage ../development/python-modules/fusepy { };
@@ -3589,7 +3591,7 @@ in {
 
   mayavi = libsForQt5.callPackage ../development/python-modules/mayavi {
     inherit buildPythonPackage isPy27 fetchPypi;
-    inherit (self) pyface pygments numpy vtk traitsui envisage apptools pyqt5;
+    inherit (self) pyface pygments numpy vtk_7 traitsui envisage apptools pyqt5;
   };
 
   mccabe = callPackage ../development/python-modules/mccabe { };
@@ -7341,10 +7343,10 @@ in {
 
   vsts-cd-manager = callPackage ../development/python-modules/vsts-cd-manager { };
 
-  vtk = toPythonModule (pkgs.vtk_7.override {
+  vtk_9 = disabledIf isPy27 (toPythonModule (pkgs.vtk_9.override {
     inherit (self) python;
     enablePython = true;
-  });
+  }));
 
   vultr = callPackage ../development/python-modules/vultr { };
 
