@@ -25915,6 +25915,8 @@ in
 
   cd-hit = callPackage ../applications/science/biology/cd-hit { };
 
+  ciftilib = callPackage ../development/libraries/science/biology/ciftilib { };
+
   cmtk = callPackage ../applications/science/biology/cmtk { };
 
   clustal-omega = callPackage ../applications/science/biology/clustal-omega { };
