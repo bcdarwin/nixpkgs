@@ -6541,6 +6541,8 @@ in {
 
   parsimonious = callPackage ../development/python-modules/parsimonious { };
 
+  parsl = callPackage ../development/python-modules/parsl { };
+
   parsley = callPackage ../development/python-modules/parsley { };
 
   parso = callPackage ../development/python-modules/parso { };
