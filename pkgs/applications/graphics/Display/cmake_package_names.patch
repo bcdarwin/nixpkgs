@@ -1,0 +1,87 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 41dcdf6..71870f5 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -168,7 +168,7 @@ IF(NOT MINC_TOOLKIT_BUILD)
+   find_package(BICPL REQUIRED)
+ 
+   # BICGL
+-  find_package(bicgl REQUIRED)
++  find_package(bicgl REQUIRED NAMES BICGL)
+ 
+   # add_library(bicpl STATIC IMPORTED)
+   # set_property(TARGET bicpl PROPERTY IMPORTED_LOCATION ${BICPL_LIBRARY})
+@@ -177,13 +177,15 @@ IF(NOT MINC_TOOLKIT_BUILD)
+   find_package(OpenGL REQUIRED)
+ 
+   # GLUT
+-  find_package( GLUT REQUIRED )
+-  find_package( GIFTI )
++  find_package(GLUT REQUIRED)
++  find_package(X11  REQUIRED)
++  #find_package( GIFTI )
++  #find_package(NIFTI)
+ ELSE(NOT MINC_TOOLKIT_BUILD)
+   INCLUDE( ${LIBMINC_USE_FILE} )
+ ENDIF(NOT MINC_TOOLKIT_BUILD)
+ 
+-add_definitions(-DUSE_NIFTI_VERSION_1)
++#add_definitions(-DUSE_NIFTI_VERSION_1)
+ include_directories( ${BICGL_INCLUDE_DIRS} )
+ LINK_DIRECTORIES( ${BICGL_LIBRARY_DIRS} )
+ 
+@@ -196,9 +198,9 @@ include_directories( ${BICPL_INCLUDE_DIR} )
+ include_directories( ${BICGL_INCLUDE_DIR} )
+ include_directories( ${OPENGL_INCLUDE_DIR} )
+ include_directories( ${GLUT_INCLUDE_DIR} )
+-include_directories( ${NIFTI_INCLUDE_DIR} )
+-include_directories( ${GIFTI_INCLUDE_DIR} )
+-#include_directories( ${GLU_INCLUDE_DIR} )
++#include_directories( ${NIFTI_INCLUDE_DIR} )
++#include_directories( ${GIFTI_INCLUDE_DIR} )
++include_directories( ${GLU_INCLUDE_DIR} )
+ 
+ # Look for C source files. Dirty but easy way.
+ # file (GLOB_RECURSE C_SRC "./*.c")
+@@ -351,8 +353,8 @@ IF(NOT MINC_TOOLKIT_BUILD)
+         ${BICPL_LIBRARY}
+         ${GLUT_glut_LIBRARY} 
+         ${OPENGL_gl_LIBRARY}
+-        ${GIFTI_LIBRARY}
+-        ${NIFTI_LIBRARY}
++        #${GIFTI_LIBRARY}
++        #${NIFTI_LIBRARY}
+         m pthread)
+   ELSE (DISPLAY_BUILD_STATIC)
+     SET (LINK_LIBRARIES   
+@@ -363,8 +365,8 @@ IF(NOT MINC_TOOLKIT_BUILD)
+         ${BICPL_LIBRARY}
+         ${GLUT_glut_LIBRARY} 
+         ${OPENGL_gl_LIBRARY}
+-        ${GIFTI_LIBRARY}
+-        ${NIFTI_LIBRARY}
++        #${GIFTI_LIBRARY}
++        #${NIFTI_LIBRARY}
+         m pthread)
+   ENDIF (DISPLAY_BUILD_STATIC)
+ ELSE(NOT MINC_TOOLKIT_BUILD)
+@@ -372,15 +374,15 @@ ELSE(NOT MINC_TOOLKIT_BUILD)
+     SET (LINK_LIBRARIES
+       ${GLUT_LIBRARIES} ${OPENGL_gl_LIBRARY}
+       ${BICPL_STATIC_LIBRARIES} ${LIBMINC_STATIC_LIBRARIES}
+-      ${GIFTI_LIBRARY}
+-      ${NIFTI_LIBRARY}
++      #${GIFTI_LIBRARY}
++      #${NIFTI_LIBRARY}
+       m pthread)
+   ELSE(LIBMINC_STATIC_LIBRARIES AND BICPL_STATIC_LIBRARIES)
+     SET (LINK_LIBRARIES
+       ${GLUT_LIBRARIES} ${OPENGL_gl_LIBRARY}
+       ${BICPL_LIBRARIES} ${LIBMINC_LIBRARIES}
+-      ${GIFTI_LIBRARY}
+-      ${NIFTI_LIBRARY}
++      #${GIFTI_LIBRARY}
++      #${NIFTI_LIBRARY}
+       m pthread)
+   ENDIF( LIBMINC_STATIC_LIBRARIES AND BICPL_STATIC_LIBRARIES)    
+ ENDIF(NOT MINC_TOOLKIT_BUILD)
