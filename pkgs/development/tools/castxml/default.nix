@@ -45,7 +45,7 @@ stdenv.mkDerivation (finalAttrs: {
   ];
 
   cmakeFlags = [
-    "-DCLANG_RESOURCE_DIR=${libclang.dev}/"
+    "-DCLANG_RESOURCE_DIR=${libclang.lib}/lib/clang/${libclang.version}/"
     "-DSPHINX_HTML=${if withHTML then "ON" else "OFF"}"
     "-DSPHINX_MAN=${if withManual then "ON" else "OFF"}"
   ];
