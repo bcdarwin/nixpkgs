@@ -1,7 +1,23 @@
 { version, rev, sourceSha256 }:
 
-{ lib, stdenv, fetchFromGitHub, cmake, makeWrapper
-, pkg-config, libX11, libuuid, xz, vtk, Cocoa }:
+{ lib
+, stdenv
+, fetchFromGitHub
+, cmake
+, makeWrapper
+, pkg-config
+, libX11
+, libuuid
+, xz
+, vtk
+, Cocoa
+, swig4
+, castxml
+, which
+, enablePython ? true
+, python3
+, patchelf
+}:
 
 let
   itkGenericLabelInterpolatorSrc = fetchFromGitHub {
@@ -56,15 +72,20 @@ stdenv.mkDerivation {
     "-DModule_ITKIOMINC=ON"
     "-DModule_ITKIOTransformMINC=ON"
     "-DModule_SimpleITKFilters=ON"
-    "-DModule_ITKVtkGlue=ON"
+    #"-DModule_ITKVtkGlue=ON"
     "-DModule_ITKReview=ON"
     "-DModule_MGHIO=ON"
     "-DModule_AdaptiveDenoising=ON"
     "-DModule_GenericLabelInterpolator=ON"
+  ] ++ lib.optionals enablePython [
+    "-DITK_WRAP_PYTHON=ON"
+    "-DITK_USE_SYSTEM_SWIG=ON"
+    "-DITK_USE_SYSTEM_CASTXML=ON"
+    "-DPY_SITE_PACKAGES_PATH=${placeholder "out"}/${python3.sitePackages}"
   ];
 
-  nativeBuildInputs = [ cmake xz makeWrapper ];
-  buildInputs = [ libX11 libuuid vtk ] ++ lib.optionals stdenv.isDarwin [ Cocoa ];
+  nativeBuildInputs = [ cmake xz makeWrapper ] ++ lib.optionals enablePython [ castxml patchelf swig4 which ];
+  buildInputs = [ libX11 libuuid vtk ] ++ lib.optionals enablePython [ python3 ] ++ lib.optionals stdenv.isDarwin [ Cocoa ];
   # Due to ITKVtkGlue=ON and the additional dependencies needed to configure VTK 9
   # (specifically libGL and libX11 on Linux),
   # it's now seemingly necessary for packages that configure ITK to
@@ -74,6 +95,12 @@ stdenv.mkDerivation {
   # This admittedly is a hack and seems like an issue with VTK 9's CMake configuration.
   propagatedBuildInputs = vtk.propagatedBuildInputs;
 
+  preInstall = if enablePython then ''
+    #find Wrapping/Generators/Python/ -name '*so' -exec patchelf --shrink-rpath --allowed-rpath-prefixes "$out" {} \;
+    #find . -name '*so' -exec patchelf --shrink-rpath --allowed-rpath-prefixes "$out" {} \;
+    patchelf --print-rpath Wrapping/Generators/Python/itk/*so 
+    patchelf Wrapping/Generators/Python/itk/*so --shrink-rpath --allowed-rpath-prefixes "$out"
+  '' else "";
   postInstall = ''
     wrapProgram "$out/bin/h5c++" --prefix PATH ":" "${pkg-config}/bin"
   '';
