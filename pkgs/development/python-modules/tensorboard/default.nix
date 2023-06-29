@@ -26,7 +26,7 @@ buildPythonPackage rec {
   pname = "tensorboard";
   version = "2.11.0";
   format = "wheel";
-  disabled = pythonOlder "3.6" || pythonAtLeast "3.11";
+  disabled = pythonOlder "3.6";
 
   src = fetchPypi {
     inherit pname version format;
