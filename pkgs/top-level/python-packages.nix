@@ -2196,6 +2196,8 @@ self: super: with self; {
 
   codepy = callPackage ../development/python-modules/codepy { };
 
+  codetiming = callPackage ../development/python-modules/codetiming { };
+
   cogapp = callPackage ../development/python-modules/cogapp { };
 
   coinmetrics-api-client = callPackage ../development/python-modules/coinmetrics-api-client { };
