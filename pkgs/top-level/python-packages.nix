@@ -13613,6 +13613,8 @@ self: super: with self; {
 
   sunweg = callPackage ../development/python-modules/sunweg { };
 
+  superintendent = callPackage ../development/python-modules/superintendent { };
+
   supervise-api = callPackage ../development/python-modules/supervise-api { };
 
   supervisor = callPackage ../development/python-modules/supervisor { };
