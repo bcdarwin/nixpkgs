@@ -6759,6 +6759,8 @@ self: super: with self; {
 
   medpy = callPackage ../development/python-modules/medpy { };
 
+  mednext = callPackage ../development/python-modules/mednext { };
+
   meeko = callPackage ../development/python-modules/meeko { };
 
   meep = callPackage ../development/python-modules/meep { };
