@@ -23,7 +23,7 @@ buildGoModule rec {
 
   nativeBuildInputs = [ installShellFiles makeWrapper ];
 
-  tags = [ "vault" ];
+  tags = [ "vault" "ui" ];
 
   ldflags = [
     "-s" "-w"
