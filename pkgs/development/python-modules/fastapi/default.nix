@@ -5,7 +5,7 @@
   pythonOlder,
 
   # build-system
-  hatchling,
+  pdm-backend,
 
   # dependencies
   starlette,
@@ -23,6 +23,7 @@
   trio,
 
   # optional-dependencies
+  fastapi-cli,
   httpx,
   jinja2,
   python-multipart,
@@ -38,29 +39,23 @@
 
 buildPythonPackage rec {
   pname = "fastapi";
-  version = "0.110.2";
+  version = "0.111.0";
   pyproject = true;
 
-  disabled = pythonOlder "3.7";
+  disabled = pythonOlder "3.8";
 
   src = fetchFromGitHub {
     owner = "tiangolo";
     repo = "fastapi";
     rev = "refs/tags/${version}";
-    hash = "sha256-qUh5exkXVRcKIO0t4KIOZhhpsftj3BrWaL2asf8RqUI=";
+    hash = "sha256-DQYjK1dZuL7cF6quyNkgdd/GYmWm7k6YlF7YEjObQlI=";
   };
 
-  nativeBuildInputs = [
-    hatchling
+  build-system = [
+    pdm-backend
   ];
 
-  pythonRelaxDeps = [
-    "anyio"
-    # https://github.com/tiangolo/fastapi/pull/9636
-    "starlette"
-  ];
-
-  propagatedBuildInputs = [
+  dependencies = [
     starlette
     pydantic
     typing-extensions
@@ -68,6 +63,7 @@ buildPythonPackage rec {
 
   passthru.optional-dependencies.all =
     [
+      fastapi-cli
       httpx
       jinja2
       python-multipart
