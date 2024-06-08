@@ -2,7 +2,7 @@
 
 { lib, stdenv, fetchFromGitHub, fetchpatch, cmake
 , expat, fftw, gdcm, hdf5-cpp, libjpeg, libminc, libtiff, libpng
-, libX11, libuuid, xz, vtk, zlib, Cocoa }:
+, libX11, libuuid, xz, vtk, zlib, Cocoa, castxml, python3, swig4, which, autoPatchelfHook, enablePython ? true }:
 
 let
   itkGenericLabelInterpolatorSrc = fetchFromGitHub {
@@ -53,6 +53,7 @@ stdenv.mkDerivation {
     ln -sr ${itkGenericLabelInterpolatorSrc} Modules/External/ITKGenericLabelInterpolator
     ln -sr ${itkAdaptiveDenoisingSrc} Modules/External/ITKAdaptiveDenoising
     ln -sr ${itkSimpleITKFiltersSrc} Modules/External/ITKSimpleITKFilters
+    substituteInPlace Wrapping/Generators/Python/CMakeLists.txt --replace-fail "-doxygen" ""  #swig error : Unrecognized option -doxygen
   '';
 
   cmakeFlags = [
@@ -72,19 +73,24 @@ stdenv.mkDerivation {
     "-DModule_ITKIOMINC=ON"
     "-DModule_ITKIOTransformMINC=ON"
     "-DModule_SimpleITKFilters=ON"
-    "-DModule_ITKVtkGlue=ON"
+    # "-DModule_ITKVtkGlue=ON"
     "-DModule_ITKReview=ON"
     "-DModule_MGHIO=ON"
     "-DModule_AdaptiveDenoising=ON"
     "-DModule_GenericLabelInterpolator=ON"
+  ] ++ lib.optionals enablePython [
+    "-DITK_WRAP_PYTHON=ON"
+    "-DITK_USE_SYSTEM_SWIG=ON"
+    "-DITK_USE_SYSTEM_CASTXML=ON"
+    "-DPY_SITE_PACKAGES_PATH=${placeholder "out"}/${python3.sitePackages}"
   ];
 
-  nativeBuildInputs = [ cmake xz ];
+  nativeBuildInputs = [ cmake xz ] ++ lib.optionals enablePython [ castxml swig4 which autoPatchelfHook ];
   buildInputs = [
     libX11
     libuuid
-    vtk
-  ] ++ lib.optionals stdenv.isDarwin [ Cocoa ];
+    # vtk
+  ] ++ lib.optionals stdenv.isDarwin [ Cocoa ] ++ lib.optionals enablePython [ python3 ];
   # Due to ITKVtkGlue=ON and the additional dependencies needed to configure VTK 9
   # (specifically libGL and libX11 on Linux),
   # it's now seemingly necessary for packages that configure ITK to
