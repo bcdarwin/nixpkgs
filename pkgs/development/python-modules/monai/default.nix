@@ -14,7 +14,7 @@
 
 buildPythonPackage rec {
   pname = "monai";
-  version = "1.3.1";
+  version = "1.3.2";
   pyproject = true;
   # upper bound due to use of `distutils`; remove after next release:
   disabled = pythonOlder "3.8" || pythonAtLeast "3.12";
@@ -23,7 +23,7 @@ buildPythonPackage rec {
     owner = "Project-MONAI";
     repo = "MONAI";
     rev = "refs/tags/${version}";
-    hash = "sha256-YjEJbDM9+PiC3Kse8NA/b/yJBsReaK6yIyEB9uktiEc=";
+    hash = "sha256-wm4n3FuIXbE99RRLsGnZDeHtR/Tmj6C0s29pvflZg+o=";
   };
 
   preBuild = ''
