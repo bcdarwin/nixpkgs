@@ -20994,10 +20994,6 @@ with pkgs;
     nodejs = nodejs_20;
   };
 
-  itk_5_2 = callPackage ../development/libraries/itk/5.2.x.nix {
-    inherit (darwin.apple_sdk.frameworks) Cocoa;
-  };
-
   itk_5 = callPackage ../development/libraries/itk/5.x.nix {
     inherit (darwin.apple_sdk.frameworks) Cocoa;
   };
