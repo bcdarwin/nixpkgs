@@ -8316,6 +8316,8 @@ self: super: with self; {
 
   modestmaps = callPackage ../development/python-modules/modestmaps { };
 
+  modin = callPackage ../development/python-modules/modin { };
+
   mohawk = callPackage ../development/python-modules/mohawk { };
 
   molbar = callPackage ../development/python-modules/molbar { };
