@@ -12804,6 +12804,8 @@ self: super: with self; {
 
   pyhcl = callPackage ../development/python-modules/pyhcl { };
 
+  pyhealth = callPackage ../development/python-modules/pyhealth { };
+
   pyheck = callPackage ../development/python-modules/pyheck { };
 
   pyheif = callPackage ../development/python-modules/pyheif { };
