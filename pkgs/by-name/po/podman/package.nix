@@ -33,6 +33,7 @@
   aardvark-dns,
   netavark,
   passt,
+  slirp4netns,
   vfkit,
   testers,
   podman,
@@ -66,6 +67,7 @@ let
         catatonit # added here for the pause image and also set in `containersConf` for `init_path`
         netavark
         passt
+        slirp4netns
         conmon
         crun
       ]
