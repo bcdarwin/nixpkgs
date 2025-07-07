@@ -4673,6 +4673,8 @@ self: super: with self; {
 
   etesync = callPackage ../development/python-modules/etesync { };
 
+  ethos-ares = callPackage ../development/python-modules/ethos-ares { };
+
   eth-abi = callPackage ../development/python-modules/eth-abi { };
 
   eth-account = callPackage ../development/python-modules/eth-account { };
