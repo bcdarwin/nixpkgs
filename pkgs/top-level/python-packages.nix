@@ -10108,6 +10108,8 @@ self: super: with self; {
 
   nested-multipart-parser = callPackage ../development/python-modules/nested-multipart-parser { };
 
+  nested-ragged-tensors = callPackage ../development/python-modules/nested-ragged-tensors { };
+
   nestedtext = callPackage ../development/python-modules/nestedtext { };
 
   netaddr = callPackage ../development/python-modules/netaddr { };
