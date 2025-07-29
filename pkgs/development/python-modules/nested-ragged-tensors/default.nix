@@ -6,8 +6,6 @@
   setuptools-scm,
   numpy,
   safetensors,
-  pytestCheckHook,
-  pytest-cov-stub,
 }:
 
 buildPythonPackage rec {
@@ -32,10 +30,7 @@ buildPythonPackage rec {
     safetensors
   ];
 
-  nativeCheckInputs = [
-    pytestCheckHook
-    pytest-cov-stub
-  ];
+  doCheck = false; # no tests
 
   pythonImportsCheck = [
     "nested_ragged_tensors"

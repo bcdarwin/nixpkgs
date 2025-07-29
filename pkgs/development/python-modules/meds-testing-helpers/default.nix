@@ -17,14 +17,14 @@
 
 buildPythonPackage rec {
   pname = "meds-testing-helpers";
-  version = "0.3.0";
+  version = "0.2.7";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "Medical-Event-Data-Standard";
     repo = "meds_testing_helpers";
     rev = version;
-    hash = "sha256-I9ohHNHi0GBe9agcKkGTuNtiWLuMle88hbRoODw9VnY=";
+    hash = "sha256-KgT6BBpSV5QIx/V1DPreXiBpweuABlLyRu9+TfgIvU4=";
   };
 
   build-system = [
