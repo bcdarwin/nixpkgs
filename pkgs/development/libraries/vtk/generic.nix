@@ -8,6 +8,7 @@
   newScope,
   stdenv,
   fetchurl,
+  fetchFromGitHub,
   cmake,
   pkg-config,
 
@@ -46,6 +47,7 @@
   libgeotiff,
   laszip_2,
   gdal,
+  gdcm,
   pdal,
   alembic,
   imath,
@@ -91,6 +93,7 @@
   # we set mpiSupport to false by default.
   mpiSupport ? false,
   pythonSupport ? false,
+  enableVtkDicom ? !stdenv.hostPlatform.isDarwin,
 
   # passthru.tests
   testers,
@@ -136,6 +139,20 @@ stdenv.mkDerivation (finalAttrs: {
     hash = sourceSha256;
   };
 
+  postPatch =
+    let
+      vtk-dicom = fetchFromGitHub {
+        owner = "dgobbi";
+        repo = "vtk-dicom";
+        tag = "v0.8.17";
+        hash = "sha256-1lI2qsV4gymWqjeouEHZ5FRlmlh9vimH7J5rzA+eOds=";
+      };
+    in
+    lib.optionalString enableVtkDicom ''
+      cp -r ${vtk-dicom} ./Remote/vtkDICOM
+      chmod -R +w ./Remote/vtkDICOM
+    '';
+
   nativeBuildInputs = [
     cmake
     pkg-config # required for finding MySQl
@@ -175,7 +192,8 @@ stdenv.mkDerivation (finalAttrs: {
   ]
   ++ lib.optional (!(isNull qtPackages)) qtPackages.qttools
   ++ lib.optional mpiSupport mpi
-  ++ lib.optional pythonSupport tk;
+  ++ lib.optional pythonSupport tk
+  ++ lib.optional enableVtkDicom [ (gdcm.override { enableVTK = false; }) ];
 
   # propagated by vtk-config.cmake
   propagatedBuildInputs = [
@@ -289,6 +307,9 @@ stdenv.mkDerivation (finalAttrs: {
     # mpiSupport
     (lib.cmakeBool "VTK_USE_MPI" mpiSupport)
     (vtkBool "VTK_GROUP_ENABLE_MPI" mpiSupport)
+
+    # vtkDicom support
+    (lib.cmakeBool "USE_GDCM" enableVtkDicom)
   ];
 
   pythonImportsCheck = [ "vtk" ];
