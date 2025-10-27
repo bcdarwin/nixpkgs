@@ -9370,6 +9370,8 @@ self: super: with self; {
 
   minari = callPackage ../development/python-modules/minari { };
 
+  mindglide = callPackage ../development/python-modules/mindglide { };
+
   mindsdb-evaluator = callPackage ../development/python-modules/mindsdb-evaluator { };
 
   minexr = callPackage ../development/python-modules/minexr { };

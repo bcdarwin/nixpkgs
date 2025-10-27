@@ -11318,6 +11318,8 @@ with pkgs;
 
   mindforger = libsForQt5.callPackage ../applications/editors/mindforger { };
 
+  mindglide = python3Packages.toPythonApplication python3Packages.mindglide;
+
   molsketch = libsForQt5.callPackage ../applications/editors/molsketch { };
 
   gphoto2 = callPackage ../applications/misc/gphoto2 { };
