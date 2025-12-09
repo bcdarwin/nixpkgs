@@ -1160,6 +1160,8 @@ self: super: with self; {
 
   augeas = callPackage ../development/python-modules/augeas { inherit (pkgs) augeas; };
 
+  auglab = callPackage ../development/python-modules/auglab { };
+
   augmax = callPackage ../development/python-modules/augmax { };
 
   auroranoaa = callPackage ../development/python-modules/auroranoaa { };
