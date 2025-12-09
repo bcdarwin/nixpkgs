@@ -6553,6 +6553,8 @@ self: super: with self; {
 
   gruut = callPackage ../development/python-modules/gruut { };
 
+  gryds = callPackage ../development/python-modules/gryds { };
+
   gruut-ipa = callPackage ../development/python-modules/gruut-ipa { inherit (pkgs) espeak; };
 
   gsd = callPackage ../development/python-modules/gsd { };
