@@ -3268,6 +3268,8 @@ self: super: with self; {
 
   csv2md = callPackage ../development/python-modules/csv2md { };
 
+  csv-diff = callPackage ../development/python-modules/csv-diff { };
+
   csvw = callPackage ../development/python-modules/csvw { };
 
   ctap-keyring-device = callPackage ../development/python-modules/ctap-keyring-device { };
