@@ -19003,6 +19003,8 @@ self: super: with self; {
 
   totalsegmentator = callPackage ../development/python-modules/totalsegmentator { };
 
+  totalspineseg = callPackage ../development/python-modules/totalspineseg { };
+
   touying = callPackage ../development/python-modules/touying { };
 
   towncrier = callPackage ../development/python-modules/towncrier { inherit (pkgs) git; };
