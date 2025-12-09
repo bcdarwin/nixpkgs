@@ -20569,6 +20569,8 @@ self: super: with self; {
 
   world-bank-data = callPackage ../development/python-modules/world-bank-data { };
 
+  wquantiles = callPackage ../development/python-modules/wquantiles { };
+
   wrapcco = callPackage ../development/python-modules/wrapcco { };
 
   wrapio = callPackage ../development/python-modules/wrapio { };
