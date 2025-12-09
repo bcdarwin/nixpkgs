@@ -7528,6 +7528,8 @@ self: super: with self; {
 
   itypes = callPackage ../development/python-modules/itypes { };
 
+  ivadomed = callPackage ../development/python-modules/ivadomed { };
+
   iwlib = callPackage ../development/python-modules/iwlib { };
 
   ixia = callPackage ../development/python-modules/ixia { };
