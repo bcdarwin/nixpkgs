@@ -8,19 +8,24 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "elastix";
-  version = "5.2.0";
+  version = "5.3.1";
 
   src = fetchFromGitHub {
     owner = "SuperElastix";
     repo = "elastix";
     tag = finalAttrs.version;
-    hash = "sha256-edUMj8sjku8EVYaktteIDS+ouaN3kg+CXQCeSWKlLDI=";
+    hash = "sha256-WV3iIqYJ7c5tl4LopnEVEOG//JoxVW0tW90K6MNhcAA=";
   };
 
   nativeBuildInputs = [ cmake ];
   buildInputs = [ itk ];
 
   doCheck = !stdenv.hostPlatform.isDarwin; # usual dynamic linker issues
+
+  disabledTests = [
+    # requires IMAGINE plugin (requires libtorch)
+    "elastix_run_example_COMPARE_IM"
+  ];
 
   meta = {
     homepage = "https://elastix.dev";
