@@ -12,6 +12,7 @@
   cmake,
   castxml,
   swig,
+  double-conversion,
   expat,
   eigen,
   fftw,
@@ -150,6 +151,7 @@ stdenv.mkDerivation {
   ];
 
   buildInputs = [
+    double-conversion
     libx11
     libuuid
   ]
