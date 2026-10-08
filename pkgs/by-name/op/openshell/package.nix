@@ -42,12 +42,19 @@ rustPlatform.buildRustPackage (finalAttrs: {
     # only build openshell-cli crate
     substituteInPlace Cargo.toml \
       --replace-fail 'members = ["crates/*"]' 'members = ["crates/openshell-cli"]'
+
+    substituteInPlace deploy/deb/openshell-gateway.service \
+      --replace-fail "/usr/bin/openshell-gateway" "$out/bin/openshell-gateway"
   '';
 
   env = {
     # docker image tag baked in at compile time, must match binary version
     OPENSHELL_IMAGE_TAG = finalAttrs.version;
   };
+
+  postInstall = ''
+    install -Dm644 -t "$out/lib/systemd/system/" deploy/deb/*.service
+  '';
 
   doCheck = !stdenv.hostPlatform.isDarwin;
 
